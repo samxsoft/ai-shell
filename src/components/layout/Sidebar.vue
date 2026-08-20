@@ -4,8 +4,8 @@
     <div>
       <div class="p-5 border-b border-slate-800/60 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/25 ring-1 ring-white/20">
-            <Bot class="w-5 h-5 text-white" />
+          <div class="w-9 h-9 rounded-xl overflow-hidden shadow-lg shadow-blue-500/30 ring-1 ring-blue-400/30 flex-shrink-0 group hover:scale-105 transition-transform duration-200">
+            <img src="/app-icon.png" alt="AI-Shell Logo" class="w-full h-full object-cover" />
           </div>
           <div>
             <h1 class="text-sm font-semibold text-slate-100 tracking-wide flex items-center gap-1.5">
@@ -16,6 +16,7 @@
           </div>
         </div>
       </div>
+
 
       <!-- Health Score Widget -->
       <div class="p-4 mx-3 my-4 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-900/40 border border-slate-800/80 relative overflow-hidden">
@@ -137,8 +138,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { MessageSquare, Activity, Wrench, Settings, Bot, Cpu } from 'lucide-vue-next';
+import { MessageSquare, Activity, Wrench, Settings, Cpu } from 'lucide-vue-next';
 import type { NavTab, SystemMetrics } from '@/types';
+
 import { useSettings } from '@/composables/useSettings';
 
 defineProps<{
