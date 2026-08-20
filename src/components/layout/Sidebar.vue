@@ -101,19 +101,45 @@
       </nav>
     </div>
 
-    <!-- Footer Status info -->
-    <div class="p-4 border-t border-slate-800/60">
-      <div class="flex items-center gap-2 text-xs text-slate-400">
-        <div class="w-2 h-2 rounded-full bg-emerald-400 pulse-indicator"></div>
-        <span>AI Agent 引擎就绪 (Ollama / Cloud)</span>
+    <!-- Footer Status info & Active AI Provider -->
+    <div class="p-3 border-t border-slate-800/60">
+      <div
+        @click="$emit('update:activeTab', 'settings')"
+        class="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 hover:border-blue-500/30 transition-all cursor-pointer group"
+        title="点击前往【设置中心】切换大模型与配置 API Key"
+      >
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>AI Agent 引擎</span>
+          </div>
+          <span
+            class="text-[10px] font-mono px-1.5 py-0.5 rounded-full border font-medium"
+            :class="activeProviderInfo.badgeClass"
+          >
+            {{ activeProviderInfo.badge }}
+          </span>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px]">
+          <div class="flex items-center gap-1 text-slate-400 group-hover:text-slate-300 truncate max-w-[170px]">
+            <Cpu class="w-3 h-3 text-blue-400 flex-shrink-0" />
+            <span class="font-medium truncate">{{ activeProviderInfo.name }}</span>
+          </div>
+          <span class="text-[10px] text-slate-500 font-mono truncate max-w-[80px]" :title="settings.modelName">
+            {{ settings.modelName }}
+          </span>
+        </div>
       </div>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { MessageSquare, Activity, Wrench, Settings, Bot } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { MessageSquare, Activity, Wrench, Settings, Bot, Cpu } from 'lucide-vue-next';
 import type { NavTab, SystemMetrics } from '@/types';
+import { useSettings } from '@/composables/useSettings';
 
 defineProps<{
   activeTab: NavTab;
@@ -124,6 +150,45 @@ defineEmits<{
   (e: 'update:activeTab', tab: NavTab): void;
 }>();
 
+const { settings } = useSettings();
+
+const providerConfigs = {
+  deepseek: {
+    name: 'DeepSeek',
+    badge: 'DeepSeek V3',
+    badgeClass: 'bg-blue-500/10 text-blue-300 border-blue-500/30',
+  },
+  ollama: {
+    name: 'Ollama (本地私有)',
+    badge: 'Local Ollama',
+    badgeClass: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+  },
+  qwen: {
+    name: '通义千问 Qwen',
+    badge: 'DashScope',
+    badgeClass: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+  },
+  openai: {
+    name: 'OpenAI',
+    badge: 'GPT-4o',
+    badgeClass: 'bg-teal-500/10 text-teal-300 border-teal-500/30',
+  },
+  claude: {
+    name: 'Anthropic Claude',
+    badge: 'Claude 3.5',
+    badgeClass: 'bg-purple-500/10 text-purple-300 border-purple-500/30',
+  },
+};
+
+const activeProviderInfo = computed(() => {
+  const p = settings.aiProvider || 'deepseek';
+  return providerConfigs[p] || {
+    name: p.toUpperCase(),
+    badge: p,
+    badgeClass: 'bg-slate-800 text-slate-300 border-slate-700',
+  };
+});
+
 const navItems = [
   { id: 'chat' as NavTab, label: '智能排障对话', icon: MessageSquare, badge: 'AI' },
   { id: 'monitor' as NavTab, label: '实时性能监控', icon: Activity },
@@ -131,3 +196,4 @@ const navItems = [
   { id: 'settings' as NavTab, label: '设置中心', icon: Settings },
 ];
 </script>
+
