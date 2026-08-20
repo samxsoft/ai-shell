@@ -32,7 +32,9 @@ export interface PortOccupantInfo {
   protocol: string;
   localAddress: string;
   status: string;
+  exePath?: string;
 }
+
 
 export interface AutostartEntry {
   name: string;
@@ -40,7 +42,11 @@ export interface AutostartEntry {
   location: string;
   enabled: boolean;
   description?: string;
+  publisher?: string;
+  impact?: 'high' | 'medium' | 'low';
+  safeToDisable?: boolean;
 }
+
 
 export interface DnsPingResult {
   name: string;
@@ -64,7 +70,7 @@ export interface ProcessItem {
 export interface ActionCardData {
   id: string;
   title: string;
-  type: 'kill_process' | 'clean_disk' | 'fix_network' | 'speedup_boot' | 'general';
+  type: 'kill_process' | 'clean_disk' | 'fix_network' | 'speedup_boot' | 'toggle_autostart' | 'general';
   severity: 'info' | 'warning' | 'danger';
   impactDescription: string;
   expectedBenefit: string;
@@ -72,6 +78,7 @@ export interface ActionCardData {
   status: 'pending' | 'executing' | 'completed' | 'failed';
   details?: Record<string, any>;
 }
+
 
 export interface DiagnosticLog {
   timestamp: string;

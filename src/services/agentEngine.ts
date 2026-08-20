@@ -75,6 +75,17 @@ export const SYSTEM_PROBE_TOOLS = [
   {
     type: 'function',
     function: {
+      name: 'scan_listening_ports',
+      description: '全量扫描系统当前所有正在监听中的活跃 TCP 端口（如 1420/3000/3306/8080 等），返回每个端口的占用进程名称、PID 与内存。',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'get_autostart_entries',
       description: '扫描系统的开机自启动软件列表（注册表 Run 项与启动目录）。',
       parameters: {
@@ -84,6 +95,7 @@ export const SYSTEM_PROBE_TOOLS = [
     },
   },
 ];
+
 
 const AGENT_SYSTEM_PROMPT = `
 你是一款名为“AI-Shell 智能系统管家”的专业系统维护与排错 Agent。
@@ -137,10 +149,14 @@ async function executeProbeTool(toolName: string, args: any): Promise<{ result: 
       const port = args?.port || 8080;
       result = await invoke('check_port_occupancy', { port }).catch(() => ({ port, isOccupied: false }));
       cmdStr = `netstat -ano | findstr :${port}`;
+    } else if (toolName === 'scan_listening_ports') {
+      result = await invoke('scan_listening_ports').catch(() => []);
+      cmdStr = 'netstat -ano -p tcp | findstr LISTENING';
     } else if (toolName === 'get_autostart_entries') {
       result = await invoke('get_autostart_entries').catch(() => []);
       cmdStr = 'query_registry_run_keys';
     } else {
+
       result = { error: `未知的探针工具: ${toolName}` };
     }
 

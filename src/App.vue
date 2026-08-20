@@ -47,8 +47,9 @@
         <!-- 3. Toolbox Tab -->
         <ToolboxView
           v-else-if="activeTab === 'toolbox'"
-          @trigger-tool="handleToolTrigger"
+          @select-tool="handleToolSelect"
         />
+
 
         <!-- 4. Settings Tab -->
         <SettingsView
@@ -116,13 +117,16 @@ const handleKillProcess = (pid: number) => {
   killProcess(pid);
 };
 
-const handleToolTrigger = (tool: any) => {
+const handleToolSelect = (prompt: string) => {
   activeTab.value = 'chat';
-  sendMessage(tool.query);
+  createNewSession();
+  sendMessage(prompt);
 };
 
 const handleTopQuickCheck = () => {
   activeTab.value = 'chat';
+  createNewSession();
   sendMessage('进行全系统深度体检，列出所有性能瓶颈与优化建议。');
 };
+
 </script>

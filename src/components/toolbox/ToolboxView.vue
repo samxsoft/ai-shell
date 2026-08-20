@@ -22,7 +22,6 @@
           原生探针就绪
         </span>
       </div>
-
     </div>
 
     <!-- Category Grid: 一排四个 -->
@@ -77,33 +76,58 @@
       </div>
     </div>
 
-
-    <!-- ================= 1. 真实端口排查弹窗 ================= -->
+    <!-- ================= 1. 真实端口排查与全端口扫描弹窗 ================= -->
     <div
       v-if="activeModal === 'port'"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
     >
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 max-h-[88vh] flex flex-col">
+        <!-- Modal Header -->
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <div class="flex items-center gap-2">
             <Radio class="w-5 h-5 text-indigo-400" />
-            <h3 class="text-sm font-semibold text-slate-100">真实端口冲突探测与强制释放</h3>
+            <div>
+              <h3 class="text-sm font-semibold text-slate-100">真实端口冲突探测与一键释放</h3>
+              <p class="text-[11px] text-slate-400">底层调用 netstat/lsof 探测活跃监听端口，定位 PID、内存及路径，支持安全强制释放</p>
+            </div>
           </div>
           <button @click="activeModal = null" class="text-slate-400 hover:text-white cursor-pointer">
             <X class="w-4 h-4" />
           </button>
         </div>
 
-        <div class="space-y-3">
-          <label class="text-xs text-slate-400">输入需要排查的端口号 (TCP/UDP)：</label>
+        <!-- Mode Tabs -->
+        <div class="flex items-center gap-2 border-b border-slate-800 pb-2">
+          <button
+            @click="portTab = 'single'"
+            class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+            :class="portTab === 'single' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'"
+          >
+            <Search class="w-3.5 h-3.5" />
+            <span>指定端口精准排查</span>
+          </button>
+          <button
+            @click="portTab = 'all'; handleScanAllPorts()"
+            class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+            :class="portTab === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'"
+          >
+            <Layers class="w-3.5 h-3.5" />
+            <span>全系统活跃监听端口总览</span>
+          </button>
+        </div>
+
+        <!-- Tab 1: 单端口排查 -->
+        <div v-if="portTab === 'single'" class="space-y-3">
+          <label class="text-xs text-slate-400">输入需要排查的端口号 (1 - 65535)：</label>
           <div class="flex items-center gap-2">
             <input
               v-model.number="inputPort"
               type="number"
               min="1"
               max="65535"
-              placeholder="如 8080, 3000, 3306"
+              placeholder="如 8080, 3000, 3306, 1420"
               class="flex-1 px-3 py-2 text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500"
+              @keyup.enter="handleCheckPort"
             />
             <button
               @click="handleCheckPort"
@@ -119,7 +143,7 @@
           <div class="flex items-center gap-1.5 flex-wrap">
             <span class="text-[11px] text-slate-500">常用端口：</span>
             <button
-              v-for="p in [8080, 3000, 3306, 80, 1420, 5432]"
+              v-for="p in [8080, 3000, 3306, 80, 1420, 5432, 27017, 6379]"
               :key="p"
               @click="inputPort = p; handleCheckPort()"
               class="text-[11px] font-mono px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded cursor-pointer transition-colors"
@@ -128,22 +152,32 @@
             </button>
           </div>
 
-          <!-- Result View -->
-          <div v-if="portResult" class="p-4 rounded-xl border mt-3" :class="portResult.isOccupied ? 'bg-amber-950/20 border-amber-500/30' : 'bg-emerald-950/20 border-emerald-500/30'">
-            <div class="flex items-start justify-between">
-              <div>
+          <!-- Result Card -->
+          <div
+            v-if="portResult"
+            class="p-4 rounded-xl border mt-3"
+            :class="portResult.isOccupied ? 'bg-amber-950/20 border-amber-500/30' : 'bg-emerald-950/20 border-emerald-500/30'"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div class="space-y-1.5 flex-1 min-w-0">
                 <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full" :class="portResult.isOccupied ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'"></span>
-                  <span class="text-xs font-bold text-slate-200">端口 :{{ portResult.port }} {{ portResult.status }}</span>
+                  <span class="w-2.5 h-2.5 rounded-full" :class="portResult.isOccupied ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'"></span>
+                  <span class="text-xs font-bold text-slate-200">
+                    端口 :{{ portResult.port }} - {{ portResult.status }}
+                  </span>
                 </div>
                 
-                <div v-if="portResult.isOccupied" class="mt-2 space-y-1 text-xs font-mono text-slate-300">
+                <div v-if="portResult.isOccupied" class="space-y-1 text-xs font-mono text-slate-300">
                   <p><span class="text-slate-500">占用进程：</span><strong class="text-amber-300">{{ portResult.processName }}</strong> (PID: {{ portResult.pid }})</p>
-                  <p><span class="text-slate-500">内存占用：</span>{{ portResult.memoryMB }} MB</p>
-                  <p><span class="text-slate-500">协议与监听地址：</span>{{ portResult.protocol }} {{ portResult.localAddress }}</p>
+                  <p v-if="portResult.memoryMB"><span class="text-slate-500">内存占用：</span>{{ portResult.memoryMB }} MB</p>
+                  <p v-if="portResult.cpuPercent !== undefined"><span class="text-slate-500">CPU 占用：</span>{{ portResult.cpuPercent }}%</p>
+                  <p><span class="text-slate-500">绑定协议与地址：</span>{{ portResult.protocol }} {{ portResult.localAddress }}</p>
+                  <p v-if="portResult.exePath" class="truncate" :title="portResult.exePath">
+                    <span class="text-slate-500">文件路径：</span><span class="text-slate-400">{{ portResult.exePath }}</span>
+                  </p>
                 </div>
-                <div v-else class="mt-1 text-xs text-emerald-400">
-                  该端口当前未被任何程序监听，可供服务正常绑定！
+                <div v-else class="text-xs text-emerald-400">
+                  ✅ 该端口当前完全空闲，没有任何应用程序在监听，可供服务正常绑定！
                 </div>
               </div>
 
@@ -152,13 +186,76 @@
                 v-if="portResult.isOccupied && portResult.pid"
                 @click="handleKillPortOccupant(portResult.pid)"
                 :disabled="isPortKilling"
-                class="px-3 py-1.5 text-xs font-medium bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-lg shadow-rose-600/20"
+                class="px-3.5 py-2 text-xs font-medium bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-lg shadow-rose-600/20 flex-shrink-0"
               >
                 <Trash2 class="w-3.5 h-3.5" />
                 <span>{{ isPortKilling ? '释放中...' : '强制释放端口' }}</span>
               </button>
             </div>
           </div>
+
+          <div v-if="portActionFeedback" class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono text-center">
+            {{ portActionFeedback }}
+          </div>
+        </div>
+
+        <!-- Tab 2: 全系统活跃监听端口列表 -->
+        <div v-else class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[50vh]">
+          <div v-if="isScanningAll" class="text-center py-10 text-xs text-slate-400 flex items-center justify-center gap-2">
+            <Loader2 class="w-4 h-4 animate-spin text-indigo-400" />
+            <span>正在全量扫描系统网络栈活跃监听端口...</span>
+          </div>
+
+          <div v-else-if="allListeningPorts.length > 0" class="space-y-1.5">
+            <div
+              v-for="item in allListeningPorts"
+              :key="item.port"
+              class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-slate-700 flex items-center justify-between gap-3 transition-colors"
+            >
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                  :{{ item.port }}
+                </span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold text-slate-200 truncate">{{ item.processName }}</span>
+                    <span v-if="item.pid" class="text-[10px] font-mono text-slate-500">PID: {{ item.pid }}</span>
+                  </div>
+                  <p class="text-[10px] font-mono text-slate-500 truncate mt-0.5">{{ item.localAddress }} • {{ item.memoryMB ? `${item.memoryMB} MB` : '系统' }}</p>
+                </div>
+              </div>
+
+              <!-- Action button -->
+              <button
+                v-if="item.pid"
+                @click="handleKillPortOccupant(item.pid)"
+                :disabled="isPortKilling"
+                class="px-2.5 py-1 text-xs font-medium text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-600 rounded-lg border border-rose-500/20 transition-all cursor-pointer flex items-center gap-1"
+                title="结束占用该端口的进程"
+              >
+                <Trash2 class="w-3 h-3" />
+                <span>释放</span>
+              </button>
+            </div>
+          </div>
+
+          <div v-else class="text-center py-10 text-xs text-slate-500">
+            暂未探测到活跃监听端口
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-xs text-slate-500">
+          <span v-if="portTab === 'all'">共探测到 {{ allListeningPorts.length }} 个活跃监听端口</span>
+          <span v-else>精准匹配 IPv4 & IPv6 监听服务</span>
+          <button
+            v-if="portTab === 'all'"
+            @click="handleScanAllPorts"
+            class="text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <RotateCw class="w-3 h-3" />
+            <span>重新扫描</span>
+          </button>
         </div>
       </div>
     </div>
@@ -168,13 +265,14 @@
       v-if="activeModal === 'autostart'"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
     >
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl p-6 shadow-2xl space-y-4 max-h-[88vh] flex flex-col">
+        <!-- Modal Header -->
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <div class="flex items-center gap-2">
             <Zap class="w-5 h-5 text-amber-400" />
             <div>
-              <h3 class="text-sm font-semibold text-slate-100">Windows 真实开机自启动项管理</h3>
-              <p class="text-[11px] text-slate-400">已读取注册表 HKCU/HKLM 及启动文件夹，可直接一键禁用或启用自启软件</p>
+              <h3 class="text-sm font-semibold text-slate-100">Windows 真实开机自启动项深度管理</h3>
+              <p class="text-[11px] text-slate-400">底层读取 HKCU/HKLM 注册表与启动目录，支持安全禁用/恢复与开机耗时优化</p>
             </div>
           </div>
           <button @click="activeModal = null" class="text-slate-400 hover:text-white cursor-pointer">
@@ -182,48 +280,114 @@
           </button>
         </div>
 
+        <!-- Filter & Search Toolbar -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <!-- Filter Tabs -->
+          <div class="flex items-center gap-1.5 p-1 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs">
+            <button
+              @click="autostartFilter = 'all'"
+              class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
+              :class="autostartFilter === 'all' ? 'bg-amber-500/20 text-amber-300 font-medium' : 'text-slate-400 hover:text-slate-200'"
+            >
+              全部 ({{ autostartList.length }})
+            </button>
+            <button
+              @click="autostartFilter = 'enabled'"
+              class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
+              :class="autostartFilter === 'enabled' ? 'bg-emerald-500/20 text-emerald-300 font-medium' : 'text-slate-400 hover:text-slate-200'"
+            >
+              已启用 ({{ enabledCount }})
+            </button>
+            <button
+              @click="autostartFilter = 'disabled'"
+              class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
+              :class="autostartFilter === 'disabled' ? 'bg-slate-700 text-slate-200 font-medium' : 'text-slate-400 hover:text-slate-200'"
+            >
+              已禁用 ({{ disabledCount }})
+            </button>
+            <button
+              @click="autostartFilter = 'recommended'"
+              class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
+              :class="autostartFilter === 'recommended' ? 'bg-indigo-500/20 text-indigo-300 font-medium' : 'text-slate-400 hover:text-slate-200'"
+            >
+              推荐优化 ({{ recommendedCount }})
+            </button>
+          </div>
+
+          <!-- Search input -->
+          <div class="relative flex-1 sm:max-w-xs">
+            <Search class="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+            <input
+              v-model="autostartSearch"
+              type="text"
+              placeholder="搜索自启动项名称或路径..."
+              class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+
         <!-- List -->
-        <div class="flex-1 overflow-y-auto space-y-2 pr-1">
-          <div v-if="isAutostartLoading" class="text-center py-8 text-xs text-slate-400 flex items-center justify-center gap-2">
+        <div class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[50vh]">
+          <div v-if="isAutostartLoading" class="text-center py-10 text-xs text-slate-400 flex items-center justify-center gap-2">
             <Loader2 class="w-4 h-4 animate-spin text-amber-400" />
-            <span>正在读取系统注册表与启动目录...</span>
+            <span>正在深入扫描注册表与系统启动目录...</span>
           </div>
 
           <div
-            v-else-if="autostartList.length > 0"
-            v-for="item in autostartList"
+            v-else-if="filteredAutostartList.length > 0"
+            v-for="item in filteredAutostartList"
             :key="item.name"
-            class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-between gap-3"
+            class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-slate-700/80 flex items-center justify-between gap-3 transition-colors"
           >
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
+            <div class="min-w-0 flex-1 space-y-1">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-xs font-semibold text-slate-200 truncate">{{ item.name }}</span>
-                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">
+                <span v-if="item.publisher" class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-400">
+                  {{ item.publisher }}
+                </span>
+                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-900 border border-slate-800 text-slate-500">
                   {{ item.location }}
                 </span>
+                <span
+                  v-if="item.safeToDisable"
+                  class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/10 border border-indigo-500/30 text-indigo-300"
+                >
+                  ⚡ 建议安全禁用
+                </span>
               </div>
-              <p class="text-[11px] font-mono text-slate-500 truncate mt-0.5" :title="item.command">
+              <p class="text-[11px] font-mono text-slate-500 truncate" :title="item.command">
                 {{ item.command }}
               </p>
             </div>
 
-            <!-- Toggle switch -->
+            <!-- Toggle switch button -->
             <button
               @click="handleToggleAutostart(item)"
-              class="px-2.5 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer flex items-center gap-1"
-              :class="item.enabled ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30' : 'bg-slate-800 text-slate-400 hover:bg-emerald-500/10 hover:text-emerald-400'"
+              class="px-3 py-1.5 text-xs font-medium rounded-xl transition-all cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+              :class="item.enabled ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-rose-500/15 hover:text-rose-300 hover:border-rose-500/30' : 'bg-slate-800 text-slate-400 hover:bg-emerald-500/15 hover:text-emerald-300'"
             >
+              <span class="w-1.5 h-1.5 rounded-full" :class="item.enabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'"></span>
               <span>{{ item.enabled ? '已启用 (点击禁用)' : '已禁用 (点击恢复)' }}</span>
             </button>
           </div>
 
-          <div v-else class="text-center py-8 text-xs text-slate-500">
-            暂未探测到注册表开机自启项
+          <div v-else class="text-center py-10 text-xs text-slate-500">
+            暂无匹配的开机自启动项
           </div>
         </div>
 
+        <!-- Footer -->
         <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-xs text-slate-500">
-          <span>共探测到 {{ autostartList.length }} 个开机启动项</span>
+          <div class="flex items-center gap-3">
+            <span>共 {{ autostartList.length }} 项 (已启用 {{ enabledCount }} 项)</span>
+            <button
+              v-if="recommendedCount > 0"
+              @click="handleDisableAllRecommended"
+              class="text-indigo-400 hover:underline font-medium cursor-pointer"
+            >
+              一键禁用所有推荐优化项 ({{ recommendedCount }})
+            </button>
+          </div>
           <button
             @click="loadAutostartEntries"
             class="text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
@@ -234,6 +398,7 @@
         </div>
       </div>
     </div>
+
 
     <!-- ================= 3. 真实 DNS 测速与优选弹窗 ================= -->
     <div
@@ -316,8 +481,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import {
+
   Wrench,
   Bot,
   Activity,
@@ -345,14 +511,51 @@ defineEmits<{
 const activeModal = ref<'port' | 'autostart' | 'dns' | null>(null);
 
 // 1. 端口排查状态
+const portTab = ref<'single' | 'all'>('single');
 const inputPort = ref<number>(8080);
 const isPortChecking = ref(false);
 const isPortKilling = ref(false);
+const isScanningAll = ref(false);
 const portResult = ref<PortOccupantInfo | null>(null);
+const allListeningPorts = ref<PortOccupantInfo[]>([]);
+const portActionFeedback = ref('');
 
 // 2. 开机启动项状态
 const autostartList = ref<AutostartEntry[]>([]);
 const isAutostartLoading = ref(false);
+const autostartFilter = ref<'all' | 'enabled' | 'disabled' | 'recommended'>('all');
+const autostartSearch = ref('');
+
+const enabledCount = computed(() => autostartList.value.filter((i) => i.enabled).length);
+const disabledCount = computed(() => autostartList.value.filter((i) => !i.enabled).length);
+const recommendedCount = computed(() => autostartList.value.filter((i) => i.enabled && i.safeToDisable).length);
+
+const filteredAutostartList = computed(() => {
+  let list = autostartList.value;
+
+  // 1. 标签过滤
+  if (autostartFilter.value === 'enabled') {
+    list = list.filter((i) => i.enabled);
+  } else if (autostartFilter.value === 'disabled') {
+    list = list.filter((i) => !i.enabled);
+  } else if (autostartFilter.value === 'recommended') {
+    list = list.filter((i) => i.enabled && i.safeToDisable);
+  }
+
+  // 2. 关键词搜索
+  if (autostartSearch.value.trim()) {
+    const q = autostartSearch.value.toLowerCase().trim();
+    list = list.filter(
+      (i) =>
+        i.name.toLowerCase().includes(q) ||
+        (i.publisher && i.publisher.toLowerCase().includes(q)) ||
+        i.command.toLowerCase().includes(q)
+    );
+  }
+
+  return list;
+});
+
 
 // 3. DNS 测速状态
 const dnsList = ref<DnsPingResult[]>([
@@ -369,6 +572,7 @@ const dnsApplyMsg = ref('');
 const openDirectTool = async (toolId: string) => {
   if (toolId === 'port') {
     activeModal.value = 'port';
+    portTab.value = 'single';
     handleCheckPort();
   } else if (toolId === 'autostart') {
     activeModal.value = 'autostart';
@@ -379,10 +583,11 @@ const openDirectTool = async (toolId: string) => {
   }
 };
 
-// 端口排查
+// 单端口精准排查
 const handleCheckPort = async () => {
   if (!inputPort.value) return;
   isPortChecking.value = true;
+  portActionFeedback.value = '';
   try {
     const res = await invoke<PortOccupantInfo>('check_port_occupancy', { port: inputPort.value });
     portResult.value = res;
@@ -393,21 +598,41 @@ const handleCheckPort = async () => {
       isOccupied: false,
       protocol: 'TCP',
       localAddress: `0.0.0.0:${inputPort.value}`,
-      status: 'IDLE (空闲)',
+      status: 'IDLE (端口空闲)',
     };
   } finally {
     isPortChecking.value = false;
   }
 };
 
+// 全量扫描活跃端口
+const handleScanAllPorts = async () => {
+  isScanningAll.value = true;
+  try {
+    const res = await invoke<PortOccupantInfo[]>('scan_listening_ports');
+    allListeningPorts.value = res || [];
+  } catch (e) {
+    console.log('scan_listening_ports fallback:', e);
+  } finally {
+    isScanningAll.value = false;
+  }
+};
+
 // 强制释放端口 (Kill)
 const handleKillPortOccupant = async (pid: number) => {
   isPortKilling.value = true;
+  portActionFeedback.value = '';
   try {
     await invoke('kill_process', { pid });
-    await handleCheckPort();
+    portActionFeedback.value = `✅ 进程 (PID: ${pid}) 已成功终止，端口已完成释放！`;
+    
+    if (portTab.value === 'single') {
+      await handleCheckPort();
+    } else {
+      await handleScanAllPorts();
+    }
   } catch (err: any) {
-    alert(`释放端口失败: ${err}`);
+    portActionFeedback.value = `❌ 释放端口失败: ${err}`;
   } finally {
     isPortKilling.value = false;
   }
@@ -435,6 +660,21 @@ const handleToggleAutostart = async (item: AutostartEntry) => {
     alert(`操作失败: ${e}`);
   }
 };
+
+// 一键禁用所有推荐优化项
+const handleDisableAllRecommended = async () => {
+  const targets = autostartList.value.filter((i) => i.enabled && i.safeToDisable);
+  if (targets.length === 0) return;
+  for (const item of targets) {
+    try {
+      await invoke('toggle_autostart', { name: item.name, enable: false });
+      item.enabled = false;
+    } catch (e) {
+      console.warn('Disable item failed:', item.name, e);
+    }
+  }
+};
+
 
 // DNS 测速
 const handleTestDns = async () => {
@@ -478,10 +718,11 @@ const tools = [
     icon: Radio,
     colorClass: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400',
     badgeClass: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300',
-    statusText: '支持实时占用探测 & Kill',
-    prompt: '帮我排查一下 8080 端口被谁占用了，如果被占用请帮我释放掉。',
+    statusText: '精准排查 & 全量扫描',
+    prompt: '请帮我全面排查一下当前系统有哪些网络端口正在被占用或存在冲突？并给出诊断分析。',
     hasDirectModal: true,
   },
+
   {
     id: 'autostart',
     name: '开机自启动项深度管理',
@@ -568,4 +809,3 @@ const tools = [
   },
 ];
 </script>
-

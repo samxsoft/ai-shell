@@ -100,6 +100,12 @@ pub async fn check_port_occupancy(port: u16, state: State<'_, ProbeState>) -> Re
 }
 
 #[tauri::command]
+pub async fn scan_listening_ports(state: State<'_, ProbeState>) -> Result<Vec<crate::models::PortOccupantInfo>, String> {
+    Ok(crate::probe::port::scan_active_ports(&state))
+}
+
+
+#[tauri::command]
 pub async fn get_autostart_entries() -> Result<Vec<crate::models::AutostartEntry>, String> {
     Ok(crate::probe::autostart::get_autostart_entries())
 }

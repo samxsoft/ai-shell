@@ -106,7 +106,9 @@ pub struct PortOccupantInfo {
     pub protocol: String,
     pub local_address: String,
     pub status: String,
+    pub exe_path: Option<String>,
 }
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -116,6 +118,9 @@ pub struct AutostartEntry {
     pub location: String, // "HKCU" | "HKLM" | "StartupFolder" | "LaunchAgent" | "DesktopEntry"
     pub enabled: bool,
     pub description: Option<String>,
+    pub publisher: Option<String>,
+    pub impact: Option<String>,
+    pub safe_to_disable: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

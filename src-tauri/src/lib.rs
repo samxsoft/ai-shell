@@ -33,7 +33,9 @@ pub fn run() {
             commands::app_toggle_maximize,
             commands::app_close,
             commands::check_port_occupancy,
+            commands::scan_listening_ports,
             commands::get_autostart_entries,
+
             commands::toggle_autostart,
             commands::test_dns_latency,
             commands::set_system_dns,
