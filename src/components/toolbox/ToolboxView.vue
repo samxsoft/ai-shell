@@ -775,7 +775,7 @@
       v-if="activeModal === 'process_killer'"
       class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
     >
-      <div class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 flex flex-col max-h-[90vh] space-y-4">
+      <div class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 flex flex-col h-[88vh] max-h-[800px] min-h-[600px] space-y-4">
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <div class="flex items-center gap-3">
@@ -795,7 +795,7 @@
 
           <div class="flex items-center gap-2">
             <button
-              @click="handleFetchProcesses"
+              @click="handleFetchProcesses(false)"
               :disabled="isProcessLoading"
               class="p-2 text-slate-400 hover:text-violet-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               title="刷新活跃进程"
@@ -898,8 +898,8 @@
         </div>
 
         <!-- Process Table List -->
-        <div class="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-[46vh]">
-          <div v-if="isProcessLoading" class="text-center py-12 text-xs text-slate-400 flex items-center justify-center gap-2">
+        <div class="flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-[380px]">
+          <div v-if="isProcessLoading && processList.length === 0" class="text-center py-20 text-xs text-slate-400 flex items-center justify-center gap-2">
             <Loader2 class="w-4 h-4 animate-spin text-violet-400" />
             <span>正在全盘扫描活跃进程负载指标...</span>
           </div>
@@ -910,6 +910,7 @@
             :key="proc.pid"
             class="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-slate-700/80 flex items-center justify-between gap-3 transition-colors text-xs"
           >
+
             <!-- Checkbox & Name & PID -->
             <div class="flex items-center gap-3 min-w-0 flex-1">
               <input
@@ -1756,8 +1757,10 @@ const filteredProcessList = computed(() => {
   return list;
 });
 
-const handleFetchProcesses = async () => {
-  isProcessLoading.value = true;
+const handleFetchProcesses = async (silent = false) => {
+  if (!silent && processList.value.length === 0) {
+    isProcessLoading.value = true;
+  }
   processActionMsg.value = '';
   try {
     const res = await invoke<ProcessItem[]>('get_process_list', { limit: 80 });
@@ -1776,14 +1779,19 @@ const handleFetchProcesses = async () => {
 };
 
 const handleKillSingleProcess = async (pid: number, name: string) => {
+  // 乐观测单：瞬间无感移除目标项，杜绝任何 DOM 坍塌抖动
+  processList.value = processList.value.filter((p) => p.pid !== pid);
+  selectedPids.value = selectedPids.value.filter((p) => p !== pid);
+  processActionMsg.value = `✅ 已成功结束进程: ${name} (PID: ${pid})`;
+
   isProcessKilling.value = true;
   try {
     await invoke('kill_process', { pid });
-    processActionMsg.value = `✅ 已成功结束进程: ${name} (PID: ${pid})`;
-    await handleFetchProcesses();
-    selectedPids.value = selectedPids.value.filter((p) => p !== pid);
+    // 静默同步后端最新状态，绝不触发布局重载
+    await handleFetchProcesses(true);
   } catch (e: any) {
     processActionMsg.value = `❌ 结束进程失败: ${e}`;
+    await handleFetchProcesses(true);
   } finally {
     isProcessKilling.value = false;
   }
@@ -1808,14 +1816,18 @@ const toggleSelectAllSafe = () => {
 
 const handleBatchKillProcesses = async () => {
   if (selectedPids.value.length === 0) return;
+  const targets = [...selectedPids.value];
+  // 乐观移除
+  processList.value = processList.value.filter((p) => !targets.includes(p.pid));
+  selectedPids.value = [];
   isProcessKilling.value = true;
   try {
-    const count = await invoke<number>('batch_kill_processes', { pids: selectedPids.value });
+    const count = await invoke<number>('batch_kill_processes', { pids: targets });
     processActionMsg.value = `⚡ 批量降温成功！已终止 ${count} 个高负载进程，内存与 CPU 压力已释放。`;
-    selectedPids.value = [];
-    await handleFetchProcesses();
+    await handleFetchProcesses(true);
   } catch (e: any) {
     processActionMsg.value = `❌ 批量结束失败: ${e}`;
+    await handleFetchProcesses(true);
   } finally {
     isProcessKilling.value = false;
   }
@@ -1831,18 +1843,22 @@ const handleQuickCoolDown = async () => {
     return;
   }
 
+  // 乐观移除
+  processList.value = processList.value.filter((p) => !coolDownPids.includes(p.pid));
+  selectedPids.value = [];
   isProcessKilling.value = true;
   try {
     const count = await invoke<number>('batch_kill_processes', { pids: coolDownPids });
     processActionMsg.value = `❄️ 一键急速降温完成！已强制终止 ${count} 个高占用进程！`;
-    selectedPids.value = [];
-    await handleFetchProcesses();
+    await handleFetchProcesses(true);
   } catch (e: any) {
     processActionMsg.value = `降温失败: ${e}`;
+    await handleFetchProcesses(true);
   } finally {
     isProcessKilling.value = false;
   }
 };
+
 
 const openDirectTool = async (toolId: string) => {
   if (toolId === 'port') {

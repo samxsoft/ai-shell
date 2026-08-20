@@ -4,6 +4,10 @@ use std::path::Path;
 use std::process::Command;
 use std::time::UNIX_EPOCH;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+
 /// 扫描指定目录下的所有大文件
 pub fn scan_large_files_in_dir(target_dir: &str, min_size_mb: u64, limit: usize) -> Vec<LargeFileInfo> {
     let min_bytes = min_size_mb * 1024 * 1024;
@@ -38,11 +42,13 @@ pub fn scan_large_files_in_dir(target_dir: &str, min_size_mb: u64, limit: usize)
 pub fn locate_file_in_explorer(file_path: &str) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        Command::new("explorer")
-            .args(["/select,", file_path])
+        let mut cmd = Command::new("explorer");
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        cmd.args(["/select,", file_path])
             .spawn()
             .map_err(|e| format!("无法打开资源管理器: {}", e))?;
         Ok(())
+
     }
 
     #[cfg(target_os = "macos")]

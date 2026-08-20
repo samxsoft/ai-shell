@@ -4,6 +4,9 @@ use std::collections::HashSet;
 use std::process::Command;
 use sysinfo::{Pid, ProcessesToUpdate};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 /// 查询指定端口的占用详情
 pub fn check_port(port: u16, state: &ProbeState) -> PortOccupantInfo {
     #[cfg(target_os = "windows")]
@@ -32,9 +35,12 @@ pub fn scan_active_ports(state: &ProbeState) -> Vec<PortOccupantInfo> {
 
 #[cfg(target_os = "windows")]
 fn check_port_windows(target_port: u16, state: &ProbeState) -> PortOccupantInfo {
-    let output = Command::new("netstat")
+    let mut cmd = Command::new("netstat");
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    let output = cmd
         .args(["-ano", "-p", "tcp"])
         .output();
+
 
     if let Ok(out) = output {
         let stdout = String::from_utf8_lossy(&out.stdout);
@@ -102,9 +108,12 @@ fn scan_active_ports_windows(state: &ProbeState) -> Vec<PortOccupantInfo> {
     let mut list = Vec::new();
     let mut seen_ports = HashSet::new();
 
-    let output = Command::new("netstat")
+    let mut cmd = Command::new("netstat");
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    let output = cmd
         .args(["-ano", "-p", "tcp"])
         .output();
+
 
     if let Ok(out) = output {
         let stdout = String::from_utf8_lossy(&out.stdout);

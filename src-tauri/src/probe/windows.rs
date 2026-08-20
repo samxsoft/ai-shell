@@ -2,10 +2,13 @@ use crate::models::{GarbageItem, GarbageScanResult};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::os::windows::process::CommandExt;
 
 /// 刷新 Windows 本地 DNS 解析缓存
 pub fn flush_dns() -> Result<String, String> {
-    let output = Command::new("ipconfig")
+    let mut cmd = Command::new("ipconfig");
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    let output = cmd
         .arg("/flushdns")
         .output()
         .map_err(|e| format!("执行 ipconfig /flushdns 失败: {}", e))?;
@@ -16,6 +19,7 @@ pub fn flush_dns() -> Result<String, String> {
         Err("刷新 DNS 缓存失败，请确保具有系统管理员权限。".to_string())
     }
 }
+
 
 /// 扫描 Windows 临时垃圾文件与缓存
 pub fn scan_garbage() -> GarbageScanResult {

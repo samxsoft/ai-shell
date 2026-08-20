@@ -5,6 +5,17 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+fn create_silent_cmd(prog: &str) -> Command {
+    let mut cmd = Command::new(prog);
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    cmd
+}
+
+
 struct DnsPreset {
     name: &'static str,
     primary: &'static str,
@@ -138,7 +149,7 @@ pub fn reset_dns_to_dhcp() -> Result<String, String> {
 pub fn flush_dns_cache_system() -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
-        let output = Command::new("ipconfig")
+        let output = create_silent_cmd("ipconfig")
             .arg("/flushdns")
             .output()
             .map_err(|e| format!("执行 ipconfig /flushdns 失败: {}", e))?;
@@ -173,7 +184,7 @@ fn get_current_system_dns_ips() -> Vec<String> {
     #[cfg(target_os = "windows")]
     {
         let ps_cmd = "(Get-DnsClientServerAddress -AddressFamily IPv4 | Where-Object { $_.ServerAddresses.Count -gt 0 }).ServerAddresses";
-        if let Ok(out) = Command::new("powershell").args(["-NoProfile", "-Command", ps_cmd]).output() {
+        if let Ok(out) = create_silent_cmd("powershell").args(["-NoProfile", "-Command", ps_cmd]).output() {
             let stdout = String::from_utf8_lossy(&out.stdout);
             return stdout
                 .lines()
@@ -193,13 +204,13 @@ fn apply_dns_windows(primary_ip: &str, secondary_ip: &str) -> Result<String, Str
         primary_ip, secondary_ip
     );
 
-    let output = Command::new("powershell")
+    let output = create_silent_cmd("powershell")
         .args(["-NoProfile", "-Command", &ps_script])
         .output()
         .map_err(|e| format!("执行 PowerShell 设置 DNS 失败: {}", e))?;
 
     // 刷新 DNS 缓存
-    let _ = Command::new("ipconfig").arg("/flushdns").output();
+    let _ = create_silent_cmd("ipconfig").arg("/flushdns").output();
 
     if output.status.success() {
         Ok(format!("已成功切换为: {} (备用: {})，并刷新了系统 DNS 缓存！", primary_ip, secondary_ip))
@@ -212,12 +223,12 @@ fn apply_dns_windows(primary_ip: &str, secondary_ip: &str) -> Result<String, Str
 fn reset_dns_windows() -> Result<String, String> {
     let ps_script = r#"Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { Set-DnsClientServerAddress -InterfaceIndex $_.ifIndex -ResetServerAddresses }"#;
 
-    let output = Command::new("powershell")
+    let output = create_silent_cmd("powershell")
         .args(["-NoProfile", "-Command", ps_script])
         .output()
         .map_err(|e| format!("恢复 DHCP DNS 失败: {}", e))?;
 
-    let _ = Command::new("ipconfig").arg("/flushdns").output();
+    let _ = create_silent_cmd("ipconfig").arg("/flushdns").output();
 
     if output.status.success() {
         Ok("已成功恢复为路由器 DHCP 自动获取 DNS，并刷新了 DNS 缓存！".to_string())
@@ -225,3 +236,4 @@ fn reset_dns_windows() -> Result<String, String> {
         Err(String::from_utf8_lossy(&output.stderr).to_string())
     }
 }
+
