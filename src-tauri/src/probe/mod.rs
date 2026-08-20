@@ -4,6 +4,8 @@ pub mod autostart;
 pub mod dns_tester;
 pub mod disk_radar;
 pub mod docker;
+pub mod network_repair;
+
 
 #[cfg(target_os = "windows")]
 pub mod windows;

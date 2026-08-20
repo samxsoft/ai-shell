@@ -192,5 +192,23 @@ pub struct DockerOverview {
     pub dangling_images: Vec<DockerImageItem>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkDiagnosisResult {
+    pub local_ip: String,
+    pub gateway_ip: String,
+    pub gateway_ping_ms: Option<u64>,
+    pub public_dns_ping_ms: Option<u64>,
+    pub dns_resolve_ok: bool,
+    pub dns_resolve_ms: Option<u64>,
+    pub http_access_ok: bool,
+    pub http_status_code: Option<u16>,
+    pub http_latency_ms: Option<u64>,
+    pub adapter_name: String,
+    pub overall_status: String, // "healthy" | "dns_failed" | "gateway_unreachable" | "offline"
+    pub summary_text: String,
+}
+
+
 
 

@@ -121,7 +121,19 @@ export const SYSTEM_PROBE_TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'diagnose_network_health',
+      description: '对系统物理网卡、路由器网关、公网骨干互联、DNS 解析及 HTTP 访问进行全链路网络健康度体检。',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
 ];
+
 
 
 
@@ -198,9 +210,13 @@ async function executeProbeTool(toolName: string, args: any): Promise<{ result: 
     } else if (toolName === 'scan_docker_environment') {
       result = await invoke('scan_docker_environment').catch(() => ({ isInstalled: false, isRunning: false }));
       cmdStr = 'docker system df';
+    } else if (toolName === 'diagnose_network_health') {
+      result = await invoke('diagnose_network_health').catch(() => ({ overallStatus: 'offline' }));
+      cmdStr = 'diagnose_network_health (gateway, dns, http)';
     } else {
       result = { error: `未知的探针工具: ${toolName}` };
     }
+
 
 
     const outputSnippet = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
@@ -539,12 +555,14 @@ function normalizeToolName(name: string, userQuery?: string): string {
     return 'scan_large_files';
   } else if (lower.includes('docker') || lower.includes('container') || lower.includes('image_prune') || lower.includes('容器')) {
     return 'scan_docker_environment';
+  } else if (lower.includes('network_health') || lower.includes('ping') || lower.includes('gateway') || lower.includes('网页') || lower.includes('打不开') || lower.includes('急救') || lower.includes('repair_net')) {
+    return 'diagnose_network_health';
   } else if (lower.includes('process') || lower.includes('task') || lower.includes('top') || lower.includes('进程') || lower.includes('卡顿')) {
     return 'get_process_list';
-  }
- else if (lower.includes('metric') || lower.includes('status') || lower.includes('health') || lower.includes('info')) {
+  } else if (lower.includes('metric') || lower.includes('status') || lower.includes('health') || lower.includes('info')) {
     return 'get_system_metrics';
   }
+
   return name;
 }
 

@@ -204,3 +204,19 @@ export interface UserSettings {
   requireConfirmForDangerousActions: boolean;
   theme: 'dark' | 'light' | 'system';
 }
+
+export interface NetworkDiagnosisResult {
+  localIp: string;
+  gatewayIp: string;
+  gatewayPingMs?: number;
+  publicDnsPingMs?: number;
+  dnsResolveOk: boolean;
+  dnsResolveMs?: number;
+  httpAccessOk: boolean;
+  httpStatusCode?: number;
+  httpLatencyMs?: number;
+  adapterName: string;
+  overallStatus: 'healthy' | 'dns_failed' | 'gateway_unreachable' | 'offline';
+  summaryText: string;
+}
+

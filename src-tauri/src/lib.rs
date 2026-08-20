@@ -46,7 +46,10 @@ pub fn run() {
             commands::batch_kill_processes,
             commands::scan_docker_environment,
             commands::prune_docker_target,
+            commands::diagnose_network_health,
+            commands::execute_network_repair,
         ])
+
 
 
 

@@ -168,6 +168,17 @@ pub async fn prune_docker_target(target: String) -> Result<String, String> {
     crate::probe::docker::prune_docker_target(&target)
 }
 
+#[tauri::command]
+pub async fn diagnose_network_health() -> Result<crate::models::NetworkDiagnosisResult, String> {
+    Ok(crate::probe::network_repair::diagnose_network_health())
+}
+
+#[tauri::command]
+pub async fn execute_network_repair(action: String) -> Result<String, String> {
+    crate::probe::network_repair::execute_network_repair(&action)
+}
+
+
 
 
 
