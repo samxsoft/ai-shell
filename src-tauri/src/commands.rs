@@ -125,4 +125,11 @@ pub async fn set_system_dns(primary: String, secondary: String) -> Result<String
     crate::probe::dns_tester::apply_dns_server(&primary, &secondary)
 }
 
+#[tauri::command]
+pub async fn reset_dns_to_dhcp() -> Result<String, String> {
+    crate::probe::dns_tester::reset_dns_to_dhcp()
+}
+
+
+
 

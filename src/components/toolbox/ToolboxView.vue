@@ -405,13 +405,14 @@
       v-if="activeModal === 'dns'"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
     >
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 max-h-[88vh] flex flex-col">
+        <!-- Modal Header -->
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <div class="flex items-center gap-2">
             <Globe class="w-5 h-5 text-emerald-400" />
             <div>
               <h3 class="text-sm font-semibold text-slate-100">真实网络连通性与 DNS 测速优选</h3>
-              <p class="text-[11px] text-slate-400">实时探测国内骨干与全球公共 DNS 服务器往返延迟，支持一键应用</p>
+              <p class="text-[11px] text-slate-400">多线程并发探测国内骨干与全球公共 DNS 服务器往返延迟，支持一键切换与 DHCP 还原</p>
             </div>
           </div>
           <button @click="activeModal = null" class="text-slate-400 hover:text-white cursor-pointer">
@@ -420,36 +421,72 @@
         </div>
 
         <!-- Action Bar -->
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
           <span class="text-xs text-slate-400 font-mono">延迟排行榜 (按响应速度升序)</span>
-          <button
-            @click="handleTestDns"
-            :disabled="isDnsTesting"
-            class="px-3 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <Activity class="w-3.5 h-3.5" :class="{ 'animate-spin': isDnsTesting }" />
-            <span>{{ isDnsTesting ? '测速探测中...' : '重新测速' }}</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <!-- 刷新 DNS 缓存 -->
+            <button
+              @click="handleFlushDns"
+              class="px-2.5 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all cursor-pointer border border-slate-700/50"
+              title="清除本地 Windows 解析缓存"
+            >
+              刷新解析缓存
+            </button>
+            <!-- 恢复 DHCP -->
+            <button
+              @click="handleResetDhcpDns"
+              class="px-2.5 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all cursor-pointer border border-slate-700/50"
+              title="还原为路由器默认分配"
+            >
+              恢复自动获取 (DHCP)
+            </button>
+            <!-- 测速 -->
+            <button
+              @click="handleTestDns"
+              :disabled="isDnsTesting"
+              class="px-3.5 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+            >
+              <Activity class="w-3.5 h-3.5" :class="{ 'animate-spin': isDnsTesting }" />
+              <span>{{ isDnsTesting ? '并发测速中...' : '重新测速' }}</span>
+            </button>
+          </div>
         </div>
 
         <!-- DNS List -->
-        <div class="flex-1 overflow-y-auto space-y-2 pr-1">
+        <div class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[50vh]">
           <div
             v-for="(dns, idx) in dnsList"
             :key="dns.primaryIp"
-            class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-between gap-3"
+            class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-slate-700/80 flex items-center justify-between gap-3 transition-colors"
           >
-            <div class="flex items-center gap-3">
-              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold font-mono" :class="idx === 0 ? 'bg-amber-400/20 text-amber-300' : 'bg-slate-800 text-slate-400'">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <span
+                class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-mono flex-shrink-0"
+                :class="idx === 0 ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'bg-slate-800 text-slate-400'"
+              >
                 {{ idx + 1 }}
               </span>
-              <div>
-                <h4 class="text-xs font-semibold text-slate-200">{{ dns.name }}</h4>
-                <p class="text-[11px] font-mono text-slate-500">{{ dns.primaryIp }} • {{ dns.secondaryIp }}</p>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <h4 class="text-xs font-semibold text-slate-200 truncate">{{ dns.name }}</h4>
+                  <span
+                    v-if="dns.isCurrent"
+                    class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex-shrink-0"
+                  >
+                    当前使用中
+                  </span>
+                  <span
+                    v-else-if="idx === 0"
+                    class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 flex-shrink-0"
+                  >
+                    ⚡ 最优推荐
+                  </span>
+                </div>
+                <p class="text-[11px] font-mono text-slate-500 truncate mt-0.5">{{ dns.primaryIp }} • {{ dns.secondaryIp }}</p>
               </div>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 flex-shrink-0">
               <!-- Latency Pill -->
               <div class="text-right">
                 <span
@@ -464,19 +501,21 @@
               <button
                 @click="handleApplyDns(dns)"
                 :disabled="isDnsApplying"
-                class="px-2.5 py-1 text-xs font-medium bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-lg transition-all cursor-pointer"
+                class="px-3 py-1.5 text-xs font-medium rounded-xl transition-all cursor-pointer"
+                :class="dns.isCurrent ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white border border-slate-700/60 hover:border-transparent'"
               >
-                设为当前 DNS
+                {{ dns.isCurrent ? '已生效' : '设为当前 DNS' }}
               </button>
             </div>
           </div>
         </div>
 
-        <div v-if="dnsApplyMsg" class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono text-center">
+        <div v-if="dnsApplyMsg" class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono text-center">
           {{ dnsApplyMsg }}
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -702,12 +741,40 @@ const handleApplyDns = async (dns: DnsPingResult) => {
       secondary: dns.secondaryIp,
     });
     dnsApplyMsg.value = msg || `已成功切换为 ${dns.name}！`;
+    // 重新测速并刷新状态
+    await handleTestDns();
   } catch (err: any) {
     dnsApplyMsg.value = `设置失败: ${err}`;
   } finally {
     isDnsApplying.value = false;
   }
 };
+
+// 恢复 DHCP 自动获取
+const handleResetDhcpDns = async () => {
+  isDnsApplying.value = true;
+  dnsApplyMsg.value = '';
+  try {
+    const msg = await invoke<string>('reset_dns_to_dhcp');
+    dnsApplyMsg.value = msg || '已恢复为路由器 DHCP 自动获取 DNS！';
+    await handleTestDns();
+  } catch (err: any) {
+    dnsApplyMsg.value = `恢复失败: ${err}`;
+  } finally {
+    isDnsApplying.value = false;
+  }
+};
+
+// 刷新本地 DNS 缓存
+const handleFlushDns = async () => {
+  try {
+    const msg = await invoke<string>('flush_dns_cache');
+    dnsApplyMsg.value = msg || '已成功刷新系统 DNS 解析缓存！';
+  } catch (err: any) {
+    dnsApplyMsg.value = `刷新失败: ${err}`;
+  }
+};
+
 
 const tools = [
   {

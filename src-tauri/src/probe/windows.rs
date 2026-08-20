@@ -11,12 +11,12 @@ pub fn flush_dns() -> Result<String, String> {
         .map_err(|e| format!("执行 ipconfig /flushdns 失败: {}", e))?;
 
     if output.status.success() {
-        let msg = String::from_utf8_lossy(&output.stdout).to_string();
-        Ok(if msg.trim().is_empty() { "DNS 缓存已成功刷新。".to_string() } else { msg })
+        Ok("已成功刷新系统 DNS 解析缓存 (Flush DNS)！".to_string())
     } else {
-        Err(String::from_utf8_lossy(&output.stderr).to_string())
+        Err("刷新 DNS 缓存失败，请确保具有系统管理员权限。".to_string())
     }
 }
+
 
 /// 扫描 Windows 临时垃圾文件与缓存
 pub fn scan_garbage() -> GarbageScanResult {

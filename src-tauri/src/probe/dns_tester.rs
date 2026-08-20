@@ -1,5 +1,8 @@
 use crate::models::DnsPingResult;
 use std::net::{SocketAddr, TcpStream};
+use std::process::Command;
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::{Duration, Instant};
 
 struct DnsPreset {
@@ -25,9 +28,14 @@ const PRESETS: &[DnsPreset] = &[
         secondary: "114.114.115.115",
     },
     DnsPreset {
-        name: "百度 BaiduDNS (百度智能解析)",
+        name: "百度 BaiduDNS (智能多线加速)",
         primary: "180.76.76.76",
         secondary: "180.76.76.77",
+    },
+    DnsPreset {
+        name: "火山引擎 ByteDNS (字节跳动)",
+        primary: "180.184.1.1",
+        secondary: "180.184.2.2",
     },
     DnsPreset {
         name: "Cloudflare (全球极速 Anycast)",
@@ -35,47 +43,68 @@ const PRESETS: &[DnsPreset] = &[
         secondary: "1.0.0.1",
     },
     DnsPreset {
-        name: "Google Public DNS (国际通用)",
+        name: "Google Public DNS (全球标准)",
         primary: "8.8.8.8",
         secondary: "8.8.4.4",
     },
+    DnsPreset {
+        name: "OpenDNS (Cisco 安全防护)",
+        primary: "208.67.222.222",
+        secondary: "208.67.220.220",
+    },
 ];
 
-/// 真实测速所有主流公共 DNS
+/// 多线程并发测速所有主流公共 DNS
 pub fn test_dns_servers() -> Vec<DnsPingResult> {
-    let mut results = Vec::new();
+    let current_dns_ips = get_current_system_dns_ips();
+    let results = Arc::new(Mutex::new(Vec::new()));
+    let mut handles = Vec::new();
 
     for preset in PRESETS {
-        let latency = measure_latency(preset.primary, 53, Duration::from_millis(1500));
+        let results_clone = Arc::clone(&results);
+        let name = preset.name.to_string();
+        let primary = preset.primary.to_string();
+        let secondary = preset.secondary.to_string();
+        let is_curr = current_dns_ips.iter().any(|ip| ip == &primary);
 
-        let (status, latency_val) = match latency {
-            Some(ms) => {
-                let s = if ms < 30 {
-                    "fast"
-                } else if ms < 80 {
-                    "normal"
-                } else {
-                    "slow"
-                };
-                (s.to_string(), Some(ms))
-            }
-            None => ("unreachable".to_string(), None),
-        };
+        let handle = thread::spawn(move || {
+            let latency = measure_latency(&primary, 53, Duration::from_millis(1200));
+            let (status, latency_val) = match latency {
+                Some(ms) => {
+                    let s = if ms < 30 {
+                        "fast"
+                    } else if ms < 80 {
+                        "normal"
+                    } else {
+                        "slow"
+                    };
+                    (s.to_string(), Some(ms))
+                }
+                None => ("unreachable".to_string(), None),
+            };
 
-        results.push(DnsPingResult {
-            name: preset.name.to_string(),
-            primary_ip: preset.primary.to_string(),
-            secondary_ip: preset.secondary.to_string(),
-            latency_ms: latency_val,
-            is_current: false,
-            status,
+            let mut list = results_clone.lock().unwrap();
+            list.push(DnsPingResult {
+                name,
+                primary_ip: primary,
+                secondary_ip: secondary,
+                latency_ms: latency_val,
+                is_current: is_curr,
+                status,
+            });
         });
+
+        handles.push(handle);
     }
 
-    // 按延迟升序排序 (连不通的排在最后)
-    results.sort_by_key(|r| r.latency_ms.unwrap_or(9999));
+    for h in handles {
+        let _ = h.join();
+    }
 
-    results
+    let mut final_list = results.lock().unwrap().clone();
+    // 按延迟升序排列 (超时排在最后)
+    final_list.sort_by_key(|r| r.latency_ms.unwrap_or(9999));
+    final_list
 }
 
 /// 一键应用 DNS 服务器
@@ -92,6 +121,41 @@ pub fn apply_dns_server(primary_ip: &str, secondary_ip: &str) -> Result<String, 
     }
 }
 
+/// 恢复为 DHCP 自动分配 DNS
+pub fn reset_dns_to_dhcp() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        reset_dns_windows()
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Ok("已恢复自动分配 DNS".to_string())
+    }
+}
+
+/// 强制刷新系统本地 DNS 缓存
+pub fn flush_dns_cache_system() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        let output = Command::new("ipconfig")
+            .arg("/flushdns")
+            .output()
+            .map_err(|e| format!("执行 ipconfig /flushdns 失败: {}", e))?;
+
+        if output.status.success() {
+            Ok("Windows IP 配置：已成功刷新 DNS 解析缓存。".to_string())
+        } else {
+            Err(String::from_utf8_lossy(&output.stderr).to_string())
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Ok("DNS 解析缓存已刷新。".to_string())
+    }
+}
+
 fn measure_latency(ip: &str, port: u16, timeout: Duration) -> Option<u64> {
     let addr_str = format!("{}:{}", ip, port);
     if let Ok(addr) = addr_str.parse::<SocketAddr>() {
@@ -104,10 +168,25 @@ fn measure_latency(ip: &str, port: u16, timeout: Duration) -> Option<u64> {
     None
 }
 
+/// 获取当前系统活跃网卡的 DNS IP 列表
+fn get_current_system_dns_ips() -> Vec<String> {
+    #[cfg(target_os = "windows")]
+    {
+        let ps_cmd = "(Get-DnsClientServerAddress -AddressFamily IPv4 | Where-Object { $_.ServerAddresses.Count -gt 0 }).ServerAddresses";
+        if let Ok(out) = Command::new("powershell").args(["-NoProfile", "-Command", ps_cmd]).output() {
+            let stdout = String::from_utf8_lossy(&out.stdout);
+            return stdout
+                .lines()
+                .map(|l| l.trim().to_string())
+                .filter(|l| !l.is_empty())
+                .collect();
+        }
+    }
+    Vec::new()
+}
+
 #[cfg(target_os = "windows")]
 fn apply_dns_windows(primary_ip: &str, secondary_ip: &str) -> Result<String, String> {
-    use std::process::Command;
-
     // 使用 PowerShell Set-DnsClientServerAddress 设置所有活跃以太网/Wi-Fi 的 DNS
     let ps_script = format!(
         r#"Get-NetAdapter | Where-Object {{ $_.Status -eq 'Up' }} | ForEach-Object {{ Set-DnsClientServerAddress -InterfaceIndex $_.ifIndex -ServerAddresses ('{}', '{}') }}"#,
@@ -123,7 +202,25 @@ fn apply_dns_windows(primary_ip: &str, secondary_ip: &str) -> Result<String, Str
     let _ = Command::new("ipconfig").arg("/flushdns").output();
 
     if output.status.success() {
-        Ok(format!("DNS 已成功切换为: {} / {}", primary_ip, secondary_ip))
+        Ok(format!("已成功切换为: {} (备用: {})，并刷新了系统 DNS 缓存！", primary_ip, secondary_ip))
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn reset_dns_windows() -> Result<String, String> {
+    let ps_script = r#"Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { Set-DnsClientServerAddress -InterfaceIndex $_.ifIndex -ResetServerAddresses }"#;
+
+    let output = Command::new("powershell")
+        .args(["-NoProfile", "-Command", ps_script])
+        .output()
+        .map_err(|e| format!("恢复 DHCP DNS 失败: {}", e))?;
+
+    let _ = Command::new("ipconfig").arg("/flushdns").output();
+
+    if output.status.success() {
+        Ok("已成功恢复为路由器 DHCP 自动获取 DNS，并刷新了 DNS 缓存！".to_string())
     } else {
         Err(String::from_utf8_lossy(&output.stderr).to_string())
     }

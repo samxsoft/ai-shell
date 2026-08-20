@@ -39,6 +39,7 @@ pub fn run() {
             commands::toggle_autostart,
             commands::test_dns_latency,
             commands::set_system_dns,
+            commands::reset_dns_to_dhcp,
         ])
 
 
