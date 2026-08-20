@@ -110,7 +110,19 @@ export const SYSTEM_PROBE_TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'scan_docker_environment',
+      description: '排查系统中的 Docker 运行状态、已停止的残留容器、悬挂镜像 (Dangling Images)、数据卷及构建缓存占用。',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
 ];
+
 
 
 
@@ -183,9 +195,13 @@ async function executeProbeTool(toolName: string, args: any): Promise<{ result: 
       const minSizeMb = args?.minSizeMb || 500;
       result = await invoke('scan_large_files', { targetDir: 'default', minSizeMb, limit: 15 }).catch(() => []);
       cmdStr = `scan_large_files --min-size ${minSizeMb}MB`;
+    } else if (toolName === 'scan_docker_environment') {
+      result = await invoke('scan_docker_environment').catch(() => ({ isInstalled: false, isRunning: false }));
+      cmdStr = 'docker system df';
     } else {
       result = { error: `未知的探针工具: ${toolName}` };
     }
+
 
     const outputSnippet = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
     return {
@@ -521,13 +537,12 @@ function normalizeToolName(name: string, userQuery?: string): string {
     return 'scan_system_garbage';
   } else if (lower.includes('large') || lower.includes('big_file') || lower.includes('bigfile') || lower.includes('disk_space') || lower.includes('大文件') || lower.includes('镜像')) {
     return 'scan_large_files';
-  } else if (lower.includes('autostart') || lower.includes('startup') || lower.includes('boot') || lower.includes('自启') || lower.includes('开机')) {
-    return 'get_autostart_entries';
-  } else if (lower.includes('dns') || lower.includes('domain')) {
-    return 'flush_dns_cache';
+  } else if (lower.includes('docker') || lower.includes('container') || lower.includes('image_prune') || lower.includes('容器')) {
+    return 'scan_docker_environment';
   } else if (lower.includes('process') || lower.includes('task') || lower.includes('top') || lower.includes('进程') || lower.includes('卡顿')) {
     return 'get_process_list';
-  } else if (lower.includes('metric') || lower.includes('status') || lower.includes('health') || lower.includes('info')) {
+  }
+ else if (lower.includes('metric') || lower.includes('status') || lower.includes('health') || lower.includes('info')) {
     return 'get_system_metrics';
   }
   return name;

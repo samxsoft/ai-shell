@@ -158,6 +158,17 @@ pub async fn delete_large_file(path: String) -> Result<(), String> {
     crate::probe::disk_radar::delete_large_file(&path)
 }
 
+#[tauri::command]
+pub async fn scan_docker_environment() -> Result<crate::models::DockerOverview, String> {
+    Ok(crate::probe::docker::scan_docker_environment())
+}
+
+#[tauri::command]
+pub async fn prune_docker_target(target: String) -> Result<String, String> {
+    crate::probe::docker::prune_docker_target(&target)
+}
+
+
 
 
 

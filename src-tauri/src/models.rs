@@ -145,4 +145,52 @@ pub struct LargeFileInfo {
     pub modified_time: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DockerContainerItem {
+    pub id: String,
+    pub names: String,
+    pub image: String,
+    pub status: String,
+    pub state: String, // "exited" | "running" | "paused"
+    pub size: String,
+    pub created: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DockerImageItem {
+    pub id: String,
+    pub repository: String,
+    pub tag: String,
+    pub size: String,
+    pub created_since: String,
+    pub is_dangling: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DockerOverview {
+    pub is_installed: bool,
+    pub is_running: bool,
+    pub version: Option<String>,
+    pub containers_count: usize,
+    pub stopped_containers_count: usize,
+    pub images_count: usize,
+    pub dangling_images_count: usize,
+    pub volumes_count: usize,
+    pub images_size: String,
+    pub images_reclaimable: String,
+    pub containers_size: String,
+    pub containers_reclaimable: String,
+    pub volumes_size: String,
+    pub volumes_reclaimable: String,
+    pub build_cache_size: String,
+    pub build_cache_reclaimable: String,
+    pub total_reclaimable: String,
+    pub stopped_containers: Vec<DockerContainerItem>,
+    pub dangling_images: Vec<DockerImageItem>,
+}
+
+
 

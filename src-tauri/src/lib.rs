@@ -44,7 +44,10 @@ pub fn run() {
             commands::locate_file,
             commands::delete_large_file,
             commands::batch_kill_processes,
+            commands::scan_docker_environment,
+            commands::prune_docker_target,
         ])
+
 
 
 

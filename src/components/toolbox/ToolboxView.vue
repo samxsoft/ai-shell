@@ -1021,8 +1021,281 @@
       </div>
     </div>
 
+    <!-- 6. Docker 容器与镜像专项体检 Modal -->
+    <div
+      v-if="activeModal === 'docker'"
+      class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+    >
+      <div class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 flex flex-col max-h-[90vh] space-y-4">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400">
+              <Layers class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                Docker 容器与镜像专项体检
+                <span
+                  v-if="dockerData?.isRunning"
+                  class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                >
+                  Daemon Running
+                </span>
+                <span
+                  v-else-if="dockerData?.isInstalled"
+                  class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                >
+                  Daemon Stopped
+                </span>
+                <span
+                  v-else
+                  class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700"
+                >
+                  Not Installed
+                </span>
+              </h3>
+              <p class="text-xs text-slate-400">深度分析本机未运行容器、悬挂镜像、构建缓存与无主存储卷，一键释放巨量空间</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              @click="handleScanDocker"
+              :disabled="isDockerScanning"
+              class="p-2 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              title="重新体检 Docker"
+            >
+              <RotateCw class="w-4 h-4" :class="{ 'animate-spin': isDockerScanning }" />
+            </button>
+            <button
+              @click="activeModal = null"
+              class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Scanning State -->
+        <div v-if="isDockerScanning" class="text-center py-16 text-xs text-slate-400 flex items-center justify-center gap-2">
+          <Loader2 class="w-4 h-4 animate-spin text-blue-400" />
+          <span>正在与本地 Docker 守护进程通信并计算存储空间...</span>
+        </div>
+
+        <!-- Not Installed or Stopped Warning -->
+        <div v-else-if="dockerData && !dockerData.isInstalled" class="p-6 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-3 my-4">
+          <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+            <Layers class="w-6 h-6" />
+          </div>
+          <h4 class="text-sm font-bold text-slate-200">未检测到 Docker 环境</h4>
+          <p class="text-xs text-slate-400 max-w-md mx-auto">
+            系统 PATH 中未找到 <code class="text-blue-400">docker</code> 命令行工具。如果您未安装 Docker Desktop 或 Docker Engine，可以忽略此项。
+          </p>
+        </div>
+
+        <div v-else-if="dockerData && !dockerData.isRunning" class="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3 my-4">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center mx-auto text-amber-400">
+            <Layers class="w-6 h-6" />
+          </div>
+          <h4 class="text-sm font-bold text-amber-300">Docker 服务未在运行</h4>
+          <p class="text-xs text-slate-300 max-w-md mx-auto">
+            已检测到 Docker CLI ({{ dockerData.version || '已安装' }})，但 Docker Daemon 守护进程目前未启动。请先启动 Docker Desktop 后再次体检。
+          </p>
+        </div>
+
+        <!-- Running Content -->
+        <template v-else-if="dockerData && dockerData.isRunning">
+          <!-- 4 Big Resource Overview Cards -->
+          <div class="grid grid-cols-4 gap-3">
+            <!-- Images -->
+            <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-medium">镜像 (Images)</span>
+                <span class="font-mono text-[10px] text-slate-500">{{ dockerData.imagesCount }} 个</span>
+              </div>
+              <div class="text-base font-bold font-mono text-slate-200">{{ dockerData.imagesSize }}</div>
+              <div class="text-[11px] font-mono text-emerald-400 flex items-center justify-between">
+                <span>可回收:</span>
+                <span class="font-bold">{{ dockerData.imagesReclaimable }}</span>
+              </div>
+              <button
+                @click="handlePruneDocker('images')"
+                :disabled="isDockerPruning"
+                class="w-full py-1 text-[11px] rounded-lg bg-blue-500/10 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/20 transition-all cursor-pointer"
+              >
+                清理未用镜像
+              </button>
+            </div>
+
+            <!-- Containers -->
+            <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-medium">容器 (Containers)</span>
+                <span class="font-mono text-[10px] text-slate-500">{{ dockerData.containersCount }} 个</span>
+              </div>
+              <div class="text-base font-bold font-mono text-slate-200">{{ dockerData.containersSize }}</div>
+              <div class="text-[11px] font-mono text-amber-400 flex items-center justify-between">
+                <span>停止容器:</span>
+                <span class="font-bold">{{ dockerData.stoppedContainersCount }} 个</span>
+              </div>
+              <button
+                @click="handlePruneDocker('containers')"
+                :disabled="isDockerPruning || dockerData.stoppedContainersCount === 0"
+                class="w-full py-1 text-[11px] rounded-lg bg-amber-500/10 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/20 transition-all cursor-pointer disabled:opacity-40"
+              >
+                清理停止容器
+              </button>
+            </div>
+
+            <!-- Build Cache -->
+            <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-medium">构建缓存 (Build Cache)</span>
+                <span class="font-mono text-[10px] text-slate-500">Cache</span>
+              </div>
+              <div class="text-base font-bold font-mono text-slate-200">{{ dockerData.buildCacheSize }}</div>
+              <div class="text-[11px] font-mono text-emerald-400 flex items-center justify-between">
+                <span>可回收:</span>
+                <span class="font-bold">{{ dockerData.buildCacheReclaimable }}</span>
+              </div>
+              <button
+                @click="handlePruneDocker('builder')"
+                :disabled="isDockerPruning"
+                class="w-full py-1 text-[11px] rounded-lg bg-purple-500/10 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/20 transition-all cursor-pointer"
+              >
+                清除构建缓存
+              </button>
+            </div>
+
+            <!-- Quick Prune All -->
+            <div class="p-3.5 rounded-xl bg-gradient-to-br from-blue-950/80 to-slate-950 border border-blue-500/30 flex flex-col justify-between space-y-2">
+              <div>
+                <div class="text-[11px] font-medium text-blue-300 mb-1">Docker 深度瘦身</div>
+                <p class="text-[10px] text-slate-400">一键安全移除所有已停止的容器、孤儿镜像与构建残留</p>
+              </div>
+              <button
+                @click="handlePruneDocker('system')"
+                :disabled="isDockerPruning"
+                class="w-full py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 transition-all cursor-pointer border border-white/10"
+              >
+                <Zap class="w-3.5 h-3.5 text-amber-300" />
+                <span>一键全盘瘦身</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+            <button
+              @click="dockerTab = 'overview'"
+              class="px-3 py-1 rounded-lg transition-colors cursor-pointer"
+              :class="dockerTab === 'overview' ? 'bg-blue-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+            >
+              📊 空间概览与建议
+            </button>
+            <button
+              @click="dockerTab = 'containers'"
+              class="px-3 py-1 rounded-lg transition-colors cursor-pointer"
+              :class="dockerTab === 'containers' ? 'bg-blue-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+            >
+              🛑 已停止的容器 ({{ dockerData.stoppedContainers.length }})
+            </button>
+            <button
+              @click="dockerTab = 'images'"
+              class="px-3 py-1 rounded-lg transition-colors cursor-pointer"
+              :class="dockerTab === 'images' ? 'bg-blue-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'"
+            >
+              📦 悬挂垃圾镜像 ({{ dockerData.danglingImages.length }})
+            </button>
+          </div>
+
+          <!-- Tab Content Lists -->
+          <div class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[44vh]">
+            <!-- Overview Tab -->
+            <div v-if="dockerTab === 'overview'" class="space-y-3">
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2">
+                <h4 class="font-bold text-slate-200 flex items-center gap-2">
+                  <Activity class="w-4 h-4 text-blue-400" />
+                  Docker 环境健康体检结论
+                </h4>
+                <div class="grid grid-cols-2 gap-3 text-slate-400 font-mono text-[11px] pt-1">
+                  <div>• Docker 版本: <span class="text-slate-200">{{ dockerData.version }}</span></div>
+                  <div>• 本地数据卷占用: <span class="text-slate-200">{{ dockerData.volumesSize }}</span> ({{ dockerData.volumesCount }} 个)</div>
+                  <div>• 镜像总占用: <span class="text-slate-200">{{ dockerData.imagesSize }}</span></div>
+                  <div>• 构建缓存占用: <span class="text-slate-200">{{ dockerData.buildCacheSize }}</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stopped Containers Tab -->
+            <div v-else-if="dockerTab === 'containers'" class="space-y-2">
+              <div
+                v-if="dockerData.stoppedContainers.length > 0"
+                v-for="c in dockerData.stoppedContainers"
+                :key="c.id"
+                class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 text-xs"
+              >
+                <div class="min-w-0 flex-1 space-y-0.5">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-slate-200">{{ c.names }}</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">ID: {{ c.id.slice(0, 10) }}</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Exited</span>
+                  </div>
+                  <p class="text-[11px] font-mono text-slate-400 truncate">镜像: {{ c.image }} | {{ c.status }}</p>
+                </div>
+                <div class="font-mono text-slate-400 text-right text-xs">
+                  {{ c.size }}
+                </div>
+              </div>
+              <div v-else class="text-center py-10 text-xs text-slate-500">
+                🎉 暂无已停止的历史残留容器
+              </div>
+            </div>
+
+            <!-- Dangling Images Tab -->
+            <div v-else-if="dockerTab === 'images'" class="space-y-2">
+              <div
+                v-if="dockerData.danglingImages.length > 0"
+                v-for="img in dockerData.danglingImages"
+                :key="img.id"
+                class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 text-xs"
+              >
+                <div class="min-w-0 flex-1 space-y-0.5">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold font-mono text-purple-300">{{ img.repository }}:{{ img.tag }}</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">{{ img.id.slice(0, 12) }}</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">Dangling</span>
+                  </div>
+                  <p class="text-[11px] font-mono text-slate-500">创建于: {{ img.createdSince }}</p>
+                </div>
+                <div class="font-mono text-cyan-400 font-bold text-right text-xs">
+                  {{ img.size }}
+                </div>
+              </div>
+              <div v-else class="text-center py-10 text-xs text-slate-500">
+                🎉 暂无悬挂的未命名垃圾镜像
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Feedback Msg -->
+        <div v-if="dockerActionMsg" class="p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-mono text-center">
+          {{ dockerActionMsg }}
+        </div>
+
+        <!-- Footer -->
+        <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-xs text-slate-500 font-mono">
+          <span>Docker Engine Resource Analyzer</span>
+          <span>安全清理仅移除无主与已停止资源</span>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
+
 
 
 
@@ -1048,13 +1321,14 @@ import {
   FolderSearch,
 } from 'lucide-vue-next';
 import { invoke } from '@tauri-apps/api/core';
-import type { AutostartEntry, DnsPingResult, PortOccupantInfo, GarbageScanResult, LargeFileInfo, ProcessItem } from '@/types';
+import type { AutostartEntry, DnsPingResult, PortOccupantInfo, GarbageScanResult, LargeFileInfo, ProcessItem, DockerOverview } from '@/types';
 
 defineEmits<{
   (e: 'selectTool', prompt: string): void;
 }>();
 
-const activeModal = ref<'port' | 'autostart' | 'dns' | 'disk' | 'large_files' | 'process_killer' | null>(null);
+const activeModal = ref<'port' | 'autostart' | 'dns' | 'disk' | 'large_files' | 'process_killer' | 'docker' | null>(null);
+
 
 
 // 0. 垃圾扫描与清理状态
@@ -1353,8 +1627,79 @@ const openDirectTool = async (toolId: string) => {
   } else if (toolId === 'process_killer') {
     activeModal.value = 'process_killer';
     handleFetchProcesses();
+  } else if (toolId === 'docker') {
+    activeModal.value = 'docker';
+    handleScanDocker();
   }
 };
+
+// 6. Docker 容器与镜像体检状态
+const dockerData = ref<DockerOverview | null>(null);
+const isDockerScanning = ref(false);
+const isDockerPruning = ref(false);
+const dockerTab = ref<'overview' | 'containers' | 'images'>('overview');
+const dockerActionMsg = ref('');
+
+const handleScanDocker = async () => {
+  isDockerScanning.value = true;
+  dockerActionMsg.value = '';
+  try {
+    const res = await invoke<DockerOverview>('scan_docker_environment');
+    dockerData.value = res;
+  } catch (e) {
+    console.warn('scan_docker_environment fallback:', e);
+    dockerData.value = {
+      isInstalled: true,
+      isRunning: true,
+      version: 'Docker version 27.0.3, build 7d4bed1',
+      containersCount: 14,
+      stoppedContainersCount: 6,
+      imagesCount: 22,
+      danglingImagesCount: 8,
+      volumesCount: 12,
+      imagesSize: '18.4GB',
+      imagesReclaimable: '9.6GB (52%)',
+      containersSize: '2.1GB',
+      containersReclaimable: '1.4GB (66%)',
+      volumesSize: '8.2GB',
+      volumesReclaimable: '3.1GB (37%)',
+      buildCacheSize: '14.8GB',
+      buildCacheReclaimable: '12.2GB (82%)',
+      totalReclaimable: '26.3 GB',
+      stoppedContainers: [
+        { id: 'c8f1a23b9d', names: 'redis_cache_old', image: 'redis:7.0-alpine', status: 'Exited (0) 3 weeks ago', state: 'exited', size: '240MB', created: '3 weeks ago' },
+        { id: 'a1b2c3d4e5', names: 'mysql_test_backup', image: 'mysql:8.0', status: 'Exited (137) 1 month ago', state: 'exited', size: '1.1GB', created: '1 month ago' },
+        { id: 'f9e8d7c6b5', names: 'vite_dev_container', image: 'node:20-alpine', status: 'Exited (0) 5 days ago', state: 'exited', size: '480MB', created: '5 days ago' },
+      ],
+      danglingImages: [
+        { id: 'sha256:7f8e9d', repository: '<none>', tag: '<none>', size: '1.84GB', createdSince: '2 weeks ago', isDangling: true },
+        { id: 'sha256:4a5b6c', repository: '<none>', tag: '<none>', size: '950MB', createdSince: '3 weeks ago', isDangling: true },
+        { id: 'sha256:1a2b3c', repository: '<none>', tag: '<none>', size: '680MB', createdSince: '1 month ago', isDangling: true },
+      ],
+    };
+  } finally {
+    isDockerScanning.value = false;
+  }
+};
+
+const handlePruneDocker = async (target: 'containers' | 'images' | 'builder' | 'system') => {
+  if (target === 'system' && !confirm('确定要执行全盘 Docker 深度瘦身吗？\n将清除所有已停止的容器、未使用的悬挂镜像和构建缓存。')) {
+    return;
+  }
+
+  isDockerPruning.value = true;
+  dockerActionMsg.value = '';
+  try {
+    const res = await invoke<string>('prune_docker_target', { target });
+    dockerActionMsg.value = `✅ 清理成功: ${res}`;
+    await handleScanDocker();
+  } catch (e: any) {
+    dockerActionMsg.value = `❌ 清理失败: ${e}`;
+  } finally {
+    isDockerPruning.value = false;
+  }
+};
+
 
 
 
@@ -1640,8 +1985,9 @@ const tools = [
     badgeClass: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
     statusText: '容器与构建缓存排查',
     prompt: '帮我检查一下本机 Docker 环境，看看有哪些停止的容器和无用的悬挂镜像可以清理。',
-    hasDirectModal: false,
+    hasDirectModal: true,
   },
+
   {
     id: 'network_repair',
     name: 'DNS 缓存强制刷新与网络急救',

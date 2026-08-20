@@ -80,8 +80,8 @@ export interface LargeFileInfo {
   modifiedTime: string;
 }
 
-
 export interface ProcessItem {
+
   pid: number;
   name: string;
   cpuPercent: number;
@@ -91,6 +91,49 @@ export interface ProcessItem {
   category: 'user' | 'system' | 'background';
   exe_path?: string;
 }
+
+export interface DockerContainerItem {
+
+  id: string;
+  names: string;
+  image: string;
+  status: string;
+  state: string;
+  size: string;
+  created: string;
+}
+
+export interface DockerImageItem {
+  id: string;
+  repository: string;
+  tag: string;
+  size: string;
+  createdSince: string;
+  isDangling: boolean;
+}
+
+export interface DockerOverview {
+  isInstalled: boolean;
+  isRunning: boolean;
+  version?: string;
+  containersCount: number;
+  stoppedContainersCount: number;
+  imagesCount: number;
+  danglingImagesCount: number;
+  volumesCount: number;
+  imagesSize: string;
+  imagesReclaimable: string;
+  containersSize: string;
+  containersReclaimable: string;
+  volumesSize: string;
+  volumesReclaimable: string;
+  buildCacheSize: string;
+  buildCacheReclaimable: string;
+  totalReclaimable: string;
+  stoppedContainers: DockerContainerItem[];
+  danglingImages: DockerImageItem[];
+}
+
 
 
 export interface ActionCardData {

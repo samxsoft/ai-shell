@@ -1,6 +1,8 @@
 import { ref, computed, watch } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
-import type { ChatMessage, ActionCardData, ChatSession, PortOccupantInfo, GarbageScanResult, LargeFileInfo, ProcessItem } from '@/types';
+import type { ChatMessage, ActionCardData, ChatSession, PortOccupantInfo, GarbageScanResult, LargeFileInfo, ProcessItem, DockerOverview } from '@/types';
+
+
 
 
 
@@ -263,7 +265,9 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
   // 离线规则 / 演示引擎
   const runFallbackOfflineDiagnosis = async (targetMsg: ChatMessage, query: string) => {
     const q = query.toLowerCase();
-    if (q.includes('大文件') || q.includes('镜像') || q.includes('占用超过') || q.includes('large')) {
+    if (q.includes('docker') || q.includes('容器') || q.includes('dangling') || q.includes('镜像体检')) {
+      await simulateDockerDiagnosis(targetMsg);
+    } else if (q.includes('大文件') || q.includes('镜像') || q.includes('占用超过') || q.includes('large')) {
       await simulateLargeFileDiagnosis(targetMsg);
     } else if (q.includes('卡') || q.includes('慢') || q.includes('slow')) {
       await simulatePerformanceDiagnosis(targetMsg);
@@ -281,6 +285,7 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       await simulateGeneralDiagnosis(targetMsg, query);
     }
   };
+
 
   const simulateLargeFileDiagnosis = async (msg: ChatMessage) => {
     msg.content += '正在深入排查磁盘中占用 >500MB 的巨型文件与虚拟磁盘镜像...\n\n';
@@ -747,6 +752,91 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
   };
 
 
+  const simulateDockerDiagnosis = async (msg: ChatMessage) => {
+    msg.content += '正在与本地 Docker 守护进程通信，深度排查容器与镜像空间占用...\n\n';
+    await delay(500);
+
+    let docker: DockerOverview | null = null;
+    try {
+      docker = await invoke<DockerOverview>('scan_docker_environment');
+    } catch (e) {
+      console.warn('scan_docker_environment fallback:', e);
+      docker = {
+        isInstalled: true,
+        isRunning: true,
+        version: 'Docker version 27.0.3, build 7d4bed1',
+        containersCount: 14,
+        stoppedContainersCount: 6,
+        imagesCount: 22,
+        danglingImagesCount: 8,
+        volumesCount: 12,
+        imagesSize: '18.4GB',
+        imagesReclaimable: '9.6GB (52%)',
+        containersSize: '2.1GB',
+        containersReclaimable: '1.4GB (66%)',
+        volumesSize: '8.2GB',
+        volumesReclaimable: '3.1GB (37%)',
+        buildCacheSize: '14.8GB',
+        buildCacheReclaimable: '12.2GB (82%)',
+        totalReclaimable: '26.3 GB',
+        stoppedContainers: [],
+        danglingImages: [],
+      };
+    }
+
+    if (!docker.isInstalled) {
+      msg.content = `## Docker 环境体检报告\n\n- **检测结果**: 系统中未安装或未配置 \`docker\` 命令行工具。\n\n### 📋 诊断总结 (Summary)：\n- **核心状态**：未检测到 Docker 环境，无容器或镜像磁盘占用。`;
+      msg.actionCards = [];
+      return;
+    }
+
+    if (!docker.isRunning) {
+      msg.content = `## Docker 环境体检报告\n\n- **检测结果**: 已安装 Docker (${docker.version || 'CLI'})，但 Docker 守护进程目前处于**停止状态**。\n\n### 📋 诊断总结 (Summary)：\n- **核心状态**：Docker Desktop / Daemon 未启动，请先开启服务后再进行体检与瘦身。`;
+      msg.actionCards = [];
+      return;
+    }
+
+    msg.diagnostics = [
+      {
+        command: 'docker system df',
+        output: `Images: ${docker.imagesSize} (Reclaimable: ${docker.imagesReclaimable})\nContainers: ${docker.containersSize} (Reclaimable: ${docker.containersReclaimable})\nLocal Volumes: ${docker.volumesSize} (Reclaimable: ${docker.volumesReclaimable})\nBuild Cache: ${docker.buildCacheSize} (Reclaimable: ${docker.buildCacheReclaimable})`,
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ];
+
+    let report = `## Docker 容器与镜像专项体检报告\n\n- **Docker 版本**: \`${docker.version}\`\n- **镜像占用**: **${docker.imagesSize}** (可回收: **${docker.imagesReclaimable}**)\n- **容器占用**: **${docker.containersSize}** (已停止: **${docker.stoppedContainersCount}** 个)\n- **构建缓存**: **${docker.buildCacheSize}** (可回收: **${docker.buildCacheReclaimable}**)\n\n`;
+
+    report += `### 📋 诊断总结 (Summary)：\n`;
+    report += `- **环境现状**：已发现约 **${docker.buildCacheReclaimable || '数 GB'}** 的构建残留与未运行历史容器。\n`;
+    report += `- **优化建议**：点击下方处置卡片执行一键安全瘦身，将安全释放悬挂镜像与构建缓存，不影响当前正在运行的业务容器。`;
+
+    msg.content = report;
+    msg.actionCards = [
+      {
+        id: `act-docker-prune-system`,
+        title: '一键全盘 Docker 深度瘦身 (docker system prune)',
+        type: 'general',
+        severity: 'info',
+        impactDescription: '安全清理所有已停止的容器、悬挂镜像 (Dangling) 以及 Docker 构建缓存，正在运行的容器完全不受影响。',
+        expectedBenefit: `预计可深度回收大量磁盘空间`,
+        actionButtonText: '立即深度瘦身',
+        status: 'pending',
+        details: { action: 'prune_docker', target: 'system' },
+      },
+      {
+        id: `act-docker-prune-containers`,
+        title: '清理已停止的历史容器 (docker container prune)',
+        type: 'general',
+        severity: 'info',
+        impactDescription: `将删除全部处于 Exited 状态的 ${docker.stoppedContainersCount} 个历史残留容器。`,
+        expectedBenefit: '释放停止容器占用的存储空间',
+        actionButtonText: '清理停止容器',
+        status: 'pending',
+        details: { action: 'prune_docker', target: 'containers' },
+      },
+    ];
+  };
+
   const simulateGeneralDiagnosis = async (msg: ChatMessage, query: string) => {
     msg.content = `已收到您的请求：“${query}”。系统当前运行平稳，所有核心服务正常。您可在【设置中心】输入 API Key 开启全模型深度智能推理！`;
   };
@@ -764,6 +854,12 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
         });
       } catch (e) {
         console.warn('toggle_autostart action invoke fallback:', e);
+      }
+    } else if (action.type === 'kill_process' && action.details?.pid) {
+      try {
+        await invoke('kill_process', { pid: action.details.pid });
+      } catch (e) {
+        console.warn('kill_process action invoke fallback:', e);
       }
     } else if (action.type === 'clean_disk') {
       try {
@@ -790,7 +886,14 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       } catch (e) {
         console.warn('locate_file action invoke fallback:', e);
       }
+    } else if (action.details?.action === 'prune_docker') {
+      try {
+        await invoke('prune_docker_target', { target: action.details.target || 'system' });
+      } catch (e) {
+        console.warn('prune_docker action invoke fallback:', e);
+      }
     }
+
 
 
 

@@ -3,6 +3,8 @@ pub mod port;
 pub mod autostart;
 pub mod dns_tester;
 pub mod disk_radar;
+pub mod docker;
+
 #[cfg(target_os = "windows")]
 pub mod windows;
 #[cfg(target_os = "macos")]
