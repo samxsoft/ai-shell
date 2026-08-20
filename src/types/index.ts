@@ -97,6 +97,15 @@ export interface ChatMessage {
   actionCards?: ActionCardData[];
 }
 
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatMessage[];
+}
+
+
 export interface ToolboxItem {
   id: string;
   name: string;

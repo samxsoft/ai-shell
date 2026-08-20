@@ -22,11 +22,19 @@
         <ChatView
           v-if="activeTab === 'chat'"
           :messages="messages"
+          :sessions="sessions"
+          :current-session-id="currentSessionId"
           :quick-prompts="quickPrompts"
           :is-generating="isGenerating"
           @send-message="sendMessage"
           @execute-action="onExecuteAction"
+          @new-session="createNewSession"
+          @switch-session="switchSession"
+          @rename-session="renameSession"
+          @delete-session="deleteSession"
+          @export-report="exportSessionToMarkdown"
         />
+
 
         <!-- 2. Monitor Tab -->
         <MonitorView
@@ -76,9 +84,16 @@ const {
 
 // AI 对话与 Action 调度
 const {
+  sessions,
+  currentSessionId,
   messages,
   quickPrompts,
   isGenerating,
+  createNewSession,
+  switchSession,
+  renameSession,
+  deleteSession,
+  exportSessionToMarkdown,
   sendMessage,
   handleActionExecution,
 } = useAgentChat((action: ActionCardData) => {
@@ -91,6 +106,7 @@ const {
     resetNetworkState();
   }
 });
+
 
 const onExecuteAction = (action: ActionCardData) => {
   handleActionExecution(action);
