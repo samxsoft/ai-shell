@@ -177,6 +177,10 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       md += `### ${role} (${msg.timestamp})\n\n`;
       md += `${msg.content}\n\n`;
 
+      if (msg.summary) {
+        md += `> 💡 **AI 诊断总结与建议 (Executive Summary)**:\n> \n> ${msg.summary.split('\n').join('\n> ')}\n\n`;
+      }
+
       if (msg.diagnostics && msg.diagnostics.length > 0) {
         md += `#### 🔬 底层系统探针采集日志:\n\`\`\`bash\n`;
         for (const log of msg.diagnostics) {
@@ -184,6 +188,7 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
         }
         md += `\`\`\`\n\n`;
       }
+
 
       if (msg.actionCards && msg.actionCards.length > 0) {
         md += `#### ⚡ 推荐处置方案与执行状态:\n`;
