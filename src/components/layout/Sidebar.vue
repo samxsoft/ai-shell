@@ -1,0 +1,133 @@
+<template>
+  <aside class="w-64 h-full bg-slate-950/80 border-r border-slate-800/80 flex flex-col justify-between select-none relative z-10">
+    <!-- Logo & Brand Header -->
+    <div>
+      <div class="p-5 border-b border-slate-800/60 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/25 ring-1 ring-white/20">
+            <Bot class="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 class="text-sm font-semibold text-slate-100 tracking-wide flex items-center gap-1.5">
+              AI-Shell
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-mono font-medium border border-blue-500/20">v0.1</span>
+            </h1>
+            <p class="text-[11px] text-slate-400">智能系统管家</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Health Score Widget -->
+      <div class="p-4 mx-3 my-4 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-900/40 border border-slate-800/80 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-400">系统健康度</span>
+          <span
+            class="text-[11px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1"
+            :class="{
+              'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30': metrics.healthStatus === 'optimal',
+              'bg-amber-500/15 text-amber-400 border border-amber-500/30': metrics.healthStatus === 'warning',
+              'bg-rose-500/15 text-rose-400 border border-rose-500/30': metrics.healthStatus === 'critical',
+            }"
+          >
+            <span class="w-1.5 h-1.5 rounded-full" :class="{
+              'bg-emerald-400': metrics.healthStatus === 'optimal',
+              'bg-amber-400': metrics.healthStatus === 'warning',
+              'bg-rose-400': metrics.healthStatus === 'critical',
+            }"></span>
+            {{ metrics.healthStatus === 'optimal' ? '状态极佳' : metrics.healthStatus === 'warning' ? '存在瓶颈' : '严重告警' }}
+          </span>
+        </div>
+
+        <div class="flex items-baseline gap-2 mb-3">
+          <span class="text-3xl font-bold font-mono tracking-tight" :class="{
+            'text-emerald-400': metrics.healthStatus === 'optimal',
+            'text-amber-400': metrics.healthStatus === 'warning',
+            'text-rose-400': metrics.healthStatus === 'critical',
+          }">{{ metrics.healthScore }}</span>
+          <span class="text-xs text-slate-500">/ 100 分</span>
+        </div>
+
+        <!-- Mini Bars -->
+        <div class="space-y-1.5 text-[11px]">
+          <div>
+            <div class="flex justify-between text-slate-400 mb-1">
+              <span>CPU 占用</span>
+              <span class="font-mono">{{ metrics.cpuUsage }}%</span>
+            </div>
+            <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                class="h-full transition-all duration-500 rounded-full"
+                :class="metrics.cpuUsage > 80 ? 'bg-rose-500' : metrics.cpuUsage > 50 ? 'bg-amber-500' : 'bg-blue-500'"
+                :style="{ width: `${metrics.cpuUsage}%` }"
+              ></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-slate-400 mb-1">
+              <span>内存占用</span>
+              <span class="font-mono">{{ metrics.memoryUsedGB }}GB / {{ metrics.memoryTotalGB }}GB</span>
+            </div>
+            <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                class="h-full transition-all duration-500 rounded-full"
+                :class="metrics.memoryUsagePercent > 85 ? 'bg-rose-500' : metrics.memoryUsagePercent > 70 ? 'bg-amber-500' : 'bg-indigo-500'"
+                :style="{ width: `${metrics.memoryUsagePercent}%` }"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="px-3 space-y-1">
+        <button
+          v-for="item in navItems"
+          :key="item.id"
+          @click="$emit('update:activeTab', item.id)"
+          class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group"
+          :class="activeTab === item.id 
+            ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-sm shadow-blue-500/10' 
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 border border-transparent'"
+        >
+          <div class="flex items-center gap-3">
+            <component :is="item.icon" class="w-4 h-4 transition-transform group-hover:scale-110" />
+            <span>{{ item.label }}</span>
+          </div>
+          <span v-if="item.badge" class="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono">
+            {{ item.badge }}
+          </span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Footer Status info -->
+    <div class="p-4 border-t border-slate-800/60">
+      <div class="flex items-center gap-2 text-xs text-slate-400">
+        <div class="w-2 h-2 rounded-full bg-emerald-400 pulse-indicator"></div>
+        <span>AI Agent 引擎就绪 (Ollama / Cloud)</span>
+      </div>
+    </div>
+  </aside>
+</template>
+
+<script setup lang="ts">
+import { MessageSquare, Activity, Wrench, Settings, Bot } from 'lucide-vue-next';
+import type { NavTab, SystemMetrics } from '@/types';
+
+defineProps<{
+  activeTab: NavTab;
+  metrics: SystemMetrics;
+}>();
+
+defineEmits<{
+  (e: 'update:activeTab', tab: NavTab): void;
+}>();
+
+const navItems = [
+  { id: 'chat' as NavTab, label: '智能排障对话', icon: MessageSquare, badge: 'AI' },
+  { id: 'monitor' as NavTab, label: '实时性能监控', icon: Activity },
+  { id: 'toolbox' as NavTab, label: '快捷工具箱', icon: Wrench, badge: '8' },
+  { id: 'settings' as NavTab, label: '设置中心', icon: Settings },
+];
+</script>

@@ -1,0 +1,122 @@
+use crate::models::{GarbageScanResult, ProcessItem, SystemMetrics};
+use crate::probe::ProbeState;
+use tauri::State;
+
+#[tauri::command]
+pub async fn get_system_metrics(state: State<'_, ProbeState>) -> Result<SystemMetrics, String> {
+    Ok(crate::probe::common::collect_system_metrics(&state))
+}
+
+#[tauri::command]
+pub async fn get_process_list(
+    state: State<'_, ProbeState>,
+    limit: Option<usize>,
+) -> Result<Vec<ProcessItem>, String> {
+    let lim = limit.unwrap_or(30);
+    Ok(crate::probe::common::collect_process_list(&state, lim))
+}
+
+#[tauri::command]
+pub async fn kill_process(state: State<'_, ProbeState>, pid: u32) -> Result<bool, String> {
+    crate::probe::common::safe_kill_process(&state, pid)
+}
+
+#[tauri::command]
+pub async fn scan_system_garbage() -> Result<GarbageScanResult, String> {
+    #[cfg(target_os = "windows")]
+    {
+        Ok(crate::probe::windows::scan_garbage())
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        Ok(crate::probe::macos::scan_garbage())
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Ok(crate::probe::linux::scan_garbage())
+    }
+}
+
+#[tauri::command]
+pub async fn clean_system_garbage() -> Result<u64, String> {
+    #[cfg(target_os = "windows")]
+    {
+        crate::probe::windows::clean_garbage()
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        crate::probe::macos::clean_garbage()
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        crate::probe::linux::clean_garbage()
+    }
+}
+
+#[tauri::command]
+pub async fn flush_dns_cache() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        crate::probe::windows::flush_dns()
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        crate::probe::macos::flush_dns()
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        crate::probe::linux::flush_dns()
+    }
+}
+
+#[tauri::command]
+pub async fn app_minimize(window: tauri::WebviewWindow) -> Result<(), String> {
+    window.minimize().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn app_toggle_maximize(window: tauri::WebviewWindow) -> Result<(), String> {
+    if window.is_maximized().unwrap_or(false) {
+        window.unmaximize().map_err(|e| e.to_string())
+    } else {
+        window.maximize().map_err(|e| e.to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn app_close(window: tauri::WebviewWindow) -> Result<(), String> {
+    window.hide().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn check_port_occupancy(port: u16, state: State<'_, ProbeState>) -> Result<crate::models::PortOccupantInfo, String> {
+    Ok(crate::probe::port::check_port(port, &state))
+}
+
+#[tauri::command]
+pub async fn get_autostart_entries() -> Result<Vec<crate::models::AutostartEntry>, String> {
+    Ok(crate::probe::autostart::get_autostart_entries())
+}
+
+#[tauri::command]
+pub async fn toggle_autostart(name: String, enable: bool) -> Result<(), String> {
+    crate::probe::autostart::toggle_autostart_entry(&name, enable)
+}
+
+#[tauri::command]
+pub async fn test_dns_latency() -> Result<Vec<crate::models::DnsPingResult>, String> {
+    Ok(crate::probe::dns_tester::test_dns_servers())
+}
+
+#[tauri::command]
+pub async fn set_system_dns(primary: String, secondary: String) -> Result<String, String> {
+    crate::probe::dns_tester::apply_dns_server(&primary, &secondary)
+}
+
+
