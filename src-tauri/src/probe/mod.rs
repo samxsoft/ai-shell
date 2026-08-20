@@ -2,12 +2,14 @@ pub mod common;
 pub mod port;
 pub mod autostart;
 pub mod dns_tester;
+pub mod disk_radar;
 #[cfg(target_os = "windows")]
 pub mod windows;
 #[cfg(target_os = "macos")]
 pub mod macos;
 #[cfg(target_os = "linux")]
 pub mod linux;
+
 
 use std::sync::Mutex;
 use std::time::Instant;

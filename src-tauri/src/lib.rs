@@ -40,7 +40,11 @@ pub fn run() {
             commands::test_dns_latency,
             commands::set_system_dns,
             commands::reset_dns_to_dhcp,
+            commands::scan_large_files,
+            commands::locate_file,
+            commands::delete_large_file,
         ])
+
 
 
         .run(tauri::generate_context!())

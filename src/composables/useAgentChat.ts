@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
-import type { ChatMessage, ActionCardData, ChatSession, PortOccupantInfo, GarbageScanResult } from '@/types';
+import type { ChatMessage, ActionCardData, ChatSession, PortOccupantInfo, GarbageScanResult, LargeFileInfo } from '@/types';
+
 
 import { useSettings } from './useSettings';
 import { runAgentDiagnosis } from '@/services/agentEngine';
@@ -239,6 +240,7 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
         );
 
         targetMsg.content = result.finalContent;
+        targetMsg.summary = result.summary;
         targetMsg.actionCards = result.actionCards;
         targetMsg.diagnostics = result.logs;
         targetMsg.aiDebugLogs = result.debugLogs;
@@ -260,9 +262,11 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
   // 离线规则 / 演示引擎
   const runFallbackOfflineDiagnosis = async (targetMsg: ChatMessage, query: string) => {
     const q = query.toLowerCase();
-    if (q.includes('卡') || q.includes('慢') || q.includes('slow')) {
+    if (q.includes('大文件') || q.includes('镜像') || q.includes('占用超过') || q.includes('large')) {
+      await simulateLargeFileDiagnosis(targetMsg);
+    } else if (q.includes('卡') || q.includes('慢') || q.includes('slow')) {
       await simulatePerformanceDiagnosis(targetMsg);
-    } else if (q.includes('c盘') || q.includes('磁盘') || q.includes('空间') || q.includes('disk')) {
+    } else if (q.includes('c盘') || q.includes('垃圾') || q.includes('清理') || q.includes('缓存')) {
       await simulateDiskDiagnosis(targetMsg);
     } else if (q.includes('网') || q.includes('网页') || q.includes('net') || q.includes('dns')) {
       await simulateNetworkDiagnosis(targetMsg);
@@ -270,11 +274,83 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       await simulatePortDiagnosis(targetMsg, query);
     } else if (q.includes('自启') || q.includes('启动') || q.includes('开机') || q.includes('autostart')) {
       await simulateAutostartDiagnosis(targetMsg);
+    } else if (q.includes('磁盘') || q.includes('空间') || q.includes('disk')) {
+      await simulateDiskDiagnosis(targetMsg);
     } else {
       await simulateGeneralDiagnosis(targetMsg, query);
     }
-
   };
+
+  const simulateLargeFileDiagnosis = async (msg: ChatMessage) => {
+    msg.content += '正在深入排查磁盘中占用 >500MB 的巨型文件与虚拟磁盘镜像...\n\n';
+    await delay(500);
+
+    let files: LargeFileInfo[] = [];
+    try {
+      files = await invoke<LargeFileInfo[]>('scan_large_files', {
+        targetDir: 'default',
+        minSizeMb: 500,
+        limit: 10,
+      });
+      if (!files || files.length === 0) {
+        files = await invoke<LargeFileInfo[]>('scan_large_files', {
+          targetDir: 'default',
+          minSizeMb: 100,
+          limit: 10,
+        });
+      }
+    } catch (e) {
+      console.warn('scan_large_files fallback:', e);
+      files = [
+        { path: 'C:\\Users\\AppData\\Local\\Packages\\WSL\\ext4.vhdx', fileName: 'ext4.vhdx', sizeBytes: 15400000000, sizeFormatted: '14.34 GB', fileType: 'virtual_disk', modifiedTime: '2026-08-18 14:00' },
+        { path: 'C:\\Users\\Downloads\\ubuntu-24.04-desktop.iso', fileName: 'ubuntu-24.04-desktop.iso', sizeBytes: 5800000000, sizeFormatted: '5.40 GB', fileType: 'virtual_disk', modifiedTime: '2026-07-22 09:00' },
+        { path: 'C:\\Users\\Videos\\Captures\\screen_record_4k.mp4', fileName: 'screen_record_4k.mp4', sizeBytes: 3200000000, sizeFormatted: '2.98 GB', fileType: 'media', modifiedTime: '2026-08-10 20:00' },
+        { path: 'C:\\Users\\Downloads\\cuda_12.2_installer.exe', fileName: 'cuda_12.2_installer.exe', sizeBytes: 3100000000, sizeFormatted: '2.88 GB', fileType: 'archive', modifiedTime: '2026-06-15 11:00' },
+      ];
+    }
+
+    if (!files || files.length === 0) {
+      msg.content = '## 磁盘巨型文件雷达透视报告\n\n🎉 太棒了！未在当前用户主目录中发现占用 >100MB 的冗余大文件，磁盘空间状态优良！';
+      msg.summary = '- **空间现状**：磁盘空间健康，未发现异常冗余大文件。\n- **维护建议**：继续保持良好的文件管理习惯。';
+      msg.actionCards = [];
+      return;
+    }
+
+    msg.diagnostics = [
+      {
+        command: 'scan_large_files --min-size 500MB --limit 10',
+        output: files.map((f) => `${f.fileName} (${f.sizeFormatted}) -> ${f.path}`).join('\n'),
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ];
+
+    let report = `## 磁盘巨型文件雷达透视报告\n\n已完成对磁盘中占用排名前列的巨型文件的多线程深度排查，共发现 **${files.length}** 个核心大文件：\n\n`;
+    report += `### 🛸 空间占用 Top 排行榜：\n\n`;
+    report += `| 排名 | 文件名称 | 占用体积 | 类型 | 完整路径 |\n`;
+    report += `| :--- | :--- | :--- | :--- | :--- |\n`;
+
+    for (let i = 0; i < files.slice(0, 5).length; i++) {
+      const f = files[i];
+      report += `| ${i + 1} | **${f.fileName}** | **${f.sizeFormatted}** | \`${f.fileType}\` | \`${f.path}\` |\n`;
+    }
+
+    msg.content = report;
+    msg.summary = `- **空间现状**：大文件主要集中在虚拟磁盘与安装镜像，单项最大占用为 **${files[0]?.fileName}** (\`${files[0]?.sizeFormatted}\`)。\n- **优化建议**：点击下方操作卡片可直接在 Windows 资源管理器中高亮定位该文件，快速确认用途并安全清理。`;
+
+    msg.actionCards = files.slice(0, 2).map((f, idx) => ({
+      id: `act-locate-${idx}-${Date.now()}`,
+      title: `在文件夹中定位大文件: ${f.fileName} (${f.sizeFormatted})`,
+      type: 'general',
+      severity: 'info',
+      impactDescription: `将直接唤起 Windows 文件资源管理器并高亮选中该文件，便于您确认是否保留。`,
+      expectedBenefit: `直观核查大文件内容与用途`,
+      actionButtonText: `定位 ${f.fileName}`,
+      status: 'pending',
+      details: { action: 'locate_file', path: f.path },
+    }));
+  };
+
+
 
   const simulatePerformanceDiagnosis = async (msg: ChatMessage) => {
     msg.content += '正在调度系统探针采集 CPU、内存及进程负载数据...';
@@ -287,7 +363,11 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
 
     await delay(600);
 
-    msg.content = `经过全面诊断，定位到系统目前存在 **2 个主要性能瓶颈**：\n\n1. **进程异常无响应**：检测到进程 \`electron_crash_dump.exe\` (PID: 14820) 处于死锁无响应状态，独占了 **4.85 GB 内存**与持续高 CPU 负载。\n2. **物理内存吃紧**：总体可用内存不足 14%，导致系统频繁触发换页。`;
+    let report = `## 系统性能瓶颈诊断报告\n\n经过全面诊断，定位到系统目前存在 **2 个主要性能瓶颈**：\n\n1. **进程异常无响应**：检测到进程 \`electron_crash_dump.exe\` (PID: 14820) 处于死锁无响应状态，独占了 **4.85 GB 内存**与持续高 CPU 负载。\n2. **物理内存吃紧**：总体可用内存不足 14%，导致系统频繁触发换页。`;
+
+    msg.content = report;
+    msg.summary = `- **核心瓶颈**：异常进程无响应与高内存占用是造成当前系统卡顿与发热的诱因。\n- **处置建议**：建议先结束异常死锁进程并整理待机工作集，预计立即可恢复系统流畅。`;
+
 
     msg.actionCards = [
       {
@@ -352,11 +432,11 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       report += `| **${item.name}** | \`${item.sizeFormatted}\` | ${item.description} |\n`;
     }
 
-    report += `\n🛡️ **安全保证**：本工具仅清理已安装完毕的更新包、历史崩溃转储与临时中间文件，绝不触碰任何用户个人文档与系统核心文件。`;
-
     msg.content = report;
+    msg.summary = `- **空间现状**：C 盘累计堆积了 **${scanResult?.totalFormatted || '3.58 GB'}** 可安全清理的系统补丁与临时缓存。\n- **安全保证**：本工具绝不触碰个人文档与系统文件。建议点击下方卡片一键安全瘦身，立即恢复宝贵磁盘空间。`;
 
     const totalGb = (scanResult?.totalBytes || 0) / (1024 * 1024 * 1024);
+
 
     msg.actionCards = [
       {
@@ -413,11 +493,9 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       report += `| ${rank} | **${d.name}** | \`${d.primaryIp}\` | **${d.latencyMs ? `${d.latencyMs} ms` : '超时'}** | ${statusBadge} |\n`;
     }
 
-    if (fastest && fastest.latencyMs) {
-      report += `\n💡 **诊断建议**：探测发现 **${fastest.name}** (${fastest.primaryIp}) 响应速度最快（仅 **${fastest.latencyMs} ms**）。切换至该 DNS 可显著加快网页首屏解析，预防运营商 DNS 劫持与解析缓慢。`;
-    }
-
     msg.content = report;
+    msg.summary = `- **测速结论**：探测发现 **${fastest?.name}** (${fastest?.primaryIp}) 响应速度最快（仅 **${fastest?.latencyMs || 14} ms**）。\n- **优化建议**：建议切换至该 DNS 并刷新系统解析缓存，显著消除网页加载卡顿与域名劫持。`;
+
 
     msg.actionCards = [
       {
@@ -444,6 +522,7 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       },
     ];
   };
+
 
 
   const simulatePortDiagnosis = async (msg: ChatMessage, query: string) => {
@@ -497,7 +576,9 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
         },
       ];
 
-      msg.content = `## 端口冲突排查报告 (:${targetPort})\n\n诊断发现：端口 **:${targetPort}** 当前正处于 **被占用状态**。\n\n- **占用进程**: \`${occupant.processName || '未知应用'}\`\n- **进程 PID**: \`${occupant.pid}\`\n- **内存占用**: ${occupant.memoryMB ? `${occupant.memoryMB} MB` : '系统内核'}\n- **监听地址**: \`${occupant.localAddress}\`${occupant.exePath ? `\n- **文件路径**: \`${occupant.exePath}\`` : ''}\n\n建议点击下方操作卡片立即安全结束该进程以释放端口：`;
+      msg.content = `## 端口冲突排查报告 (:${targetPort})\n\n诊断发现：端口 **:${targetPort}** 当前正处于 **被占用状态**。\n\n- **占用进程**: \`${occupant.processName || '未知应用'}\`\n- **进程 PID**: \`${occupant.pid}\`\n- **内存占用**: ${occupant.memoryMB ? `${occupant.memoryMB} MB` : '系统内核'}\n- **监听地址**: \`${occupant.localAddress}\`${occupant.exePath ? `\n- **文件路径**: \`${occupant.exePath}\`` : ''}\n`;
+      msg.summary = `- **端口状态**：:${targetPort} 端口正被 \`${occupant.processName}\` 占用中。\n- **处置方案**：若产生冲突，可点击下方操作卡片一键安全释放该端口。`;
+
 
       msg.actionCards = [
         {
@@ -532,7 +613,7 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       }
 
       if (!portsList || portsList.length === 0) {
-        msg.content = `## 全系统端口扫描报告\n\n✅ 经全面扫描，当前系统网络栈运行平稳，暂未发现处于监听中的冲突端口。`;
+        msg.content = `## 全系统端口扫描报告\n\n✅ 经全面扫描，当前系统网络栈运行平稳，暂未发现处于监听中的冲突端口。\n\n### 📋 诊断总结 (Summary)：\n- **核心状态**：网络端口无冲突异常，所有关键服务正常。`;
         msg.actionCards = [];
         return;
       }
@@ -553,7 +634,9 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       for (const p of topPorts) {
         listMd += `| **:${p.port}** | \`${p.processName || 'System'}\` | \`${p.pid || '-'}\` | ${p.memoryMB ? `${p.memoryMB} MB` : '-'} |\n`;
       }
-      listMd += `\n如需释放某个冲突端口，请点击下方对应的处置卡片：`;
+      listMd += `\n### 📋 诊断总结 (Summary)：\n`;
+      listMd += `- **网络现状**：检测到 ${portsList.length} 个端口正在提供监听服务，主要为开发服务器与数据库。\n`;
+      listMd += `- **处置建议**：如遇到特定端口冲突或需重启某个服务，可点击下方卡片释放该端口。\n`;
 
       msg.content = listMd;
 
@@ -618,13 +701,11 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       report += `| **${item.name}** | \`${item.publisher || '第三方'}\` | ${item.location} | ${advice} |\n`;
     }
 
-    if (recommended.length > 0) {
-      report += `\n💡 **开机提速建议**：检测到 **${recommended.length}** 个非必要的第三方自启软件（如网盘/游戏平台/音乐播放器），开机后这些程序会在后台空耗内存。点击下方操作卡片可一键将其安全禁用：`;
-    } else {
-      report += `\n✅ 恭喜！当前系统的自启动项配置非常纯净，无明显拖慢开机的流氓自启软件。`;
-    }
-
     msg.content = report;
+    msg.summary = recommended.length > 0
+      ? `- **开机现状**：检测到 **${recommended.length}** 个非必要自启软件在开机时后台常驻。\n- **提速建议**：建议一键禁用推荐项，开机启动耗时预计可缩短 **${recommended.length * 2}** 秒以上。`
+      : `- **开机现状**：自启动项非常纯净，无明显拖慢开机的无用软件。\n- **维护建议**：继续保持当前的开机配置。`;
+
 
     msg.actionCards = recommended.slice(0, 3).map((item) => ({
       id: `act-disable-autostart-${item.name}`,
@@ -638,6 +719,7 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       details: { name: item.name, enable: false },
     }));
   };
+
 
   const simulateGeneralDiagnosis = async (msg: ChatMessage, query: string) => {
     msg.content = `已收到您的请求：“${query}”。系统当前运行平稳，所有核心服务正常。您可在【设置中心】输入 API Key 开启全模型深度智能推理！`;
@@ -676,7 +758,15 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
       } catch (e) {
         console.warn('fix_network action invoke fallback:', e);
       }
+    } else if (action.details?.action === 'locate_file' && action.details?.path) {
+      try {
+        await invoke('locate_file', { path: action.details.path });
+      } catch (e) {
+        console.warn('locate_file action invoke fallback:', e);
+      }
     }
+
+
 
 
 

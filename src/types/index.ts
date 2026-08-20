@@ -71,6 +71,16 @@ export interface GarbageScanResult {
   items: GarbageItem[];
 }
 
+export interface LargeFileInfo {
+  path: string;
+  fileName: string;
+  sizeBytes: number;
+  sizeFormatted: string;
+  fileType: 'virtual_disk' | 'archive' | 'media' | 'installer' | 'database' | 'other';
+  modifiedTime: string;
+}
+
+
 export interface ProcessItem {
   pid: number;
   name: string;
@@ -111,12 +121,14 @@ export interface ChatMessage {
   id: string;
   sender: 'user' | 'ai';
   content: string;
+  summary?: string;
   timestamp: string;
   isStreaming?: boolean;
   diagnostics?: DiagnosticLog[];
   aiDebugLogs?: AiDebugLog[];
   actionCards?: ActionCardData[];
 }
+
 
 export interface ChatSession {
   id: string;

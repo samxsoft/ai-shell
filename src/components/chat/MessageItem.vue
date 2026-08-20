@@ -26,12 +26,28 @@
         <template v-if="message.content">
           <div class="markdown-body" v-html="renderMarkdown(message.content)"></div>
         </template>
-        <template v-else-if="message.isStreaming">
-          <div class="flex items-center gap-2 text-slate-400 py-1">
-            <Loader2 class="w-4 h-4 animate-spin text-blue-400" />
-            <span class="text-xs">AI 正在调度系统探针进行全盘分析...</span>
-          </div>
-        </template>
+        
+        <!-- Streaming Thinking Indicator & Spinner -->
+        <div
+          v-if="message.isStreaming"
+          class="flex items-center gap-2.5 text-blue-400 text-xs py-2 px-3 rounded-xl bg-blue-500/10 border border-blue-500/20 font-mono mt-2"
+        >
+          <Loader2 class="w-4 h-4 animate-spin text-blue-400 flex-shrink-0" />
+          <span class="animate-pulse font-medium">AI 正在深度思考与调度系统探针中...</span>
+        </div>
+      </div>
+
+
+      <!-- Dedicated Executive Summary Banner -->
+      <div
+        v-if="message.sender === 'ai' && message.summary"
+        class="mt-3.5 p-3.5 rounded-xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/20 border border-blue-500/30 text-xs leading-relaxed space-y-1.5 shadow-sm"
+      >
+        <div class="flex items-center gap-1.5 font-semibold text-blue-300">
+          <Lightbulb class="w-4 h-4 text-amber-400 flex-shrink-0" />
+          <span>AI 诊断总结与处置建议 (Executive Summary)</span>
+        </div>
+        <div class="text-slate-200 pl-5.5 space-y-1" v-html="renderMarkdown(message.summary)"></div>
       </div>
 
       <!-- Action Cards rendered below AI message -->
@@ -47,6 +63,7 @@
           @execute="$emit('executeAction', $event)"
         />
       </div>
+
 
       <!-- Log Tabs (Diagnostic Probes & AI Interaction Debugger) -->
       <div v-if="message.sender === 'ai'" class="mt-3 pt-2 border-t border-slate-800/60 flex items-center gap-4 flex-wrap">
@@ -125,7 +142,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Bot, User, Loader2, ChevronRight, Terminal, Sparkles, Code } from 'lucide-vue-next';
+import { Bot, User, Loader2, ChevronRight, Terminal, Sparkles, Code, Lightbulb } from 'lucide-vue-next';
+
 import { marked } from 'marked';
 import ActionCard from './ActionCard.vue';
 import type { ChatMessage, ActionCardData } from '@/types';

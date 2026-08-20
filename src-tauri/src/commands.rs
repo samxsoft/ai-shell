@@ -130,6 +130,29 @@ pub async fn reset_dns_to_dhcp() -> Result<String, String> {
     crate::probe::dns_tester::reset_dns_to_dhcp()
 }
 
+#[tauri::command]
+pub async fn scan_large_files(
+    target_dir: Option<String>,
+    min_size_mb: Option<u64>,
+    limit: Option<usize>,
+) -> Result<Vec<crate::models::LargeFileInfo>, String> {
+    let dir = target_dir.unwrap_or_default();
+    let min_size = min_size_mb.unwrap_or(500);
+    let lim = limit.unwrap_or(50);
+    Ok(crate::probe::disk_radar::scan_large_files_in_dir(&dir, min_size, lim))
+}
+
+#[tauri::command]
+pub async fn locate_file(path: String) -> Result<(), String> {
+    crate::probe::disk_radar::locate_file_in_explorer(&path)
+}
+
+#[tauri::command]
+pub async fn delete_large_file(path: String) -> Result<(), String> {
+    crate::probe::disk_radar::delete_large_file(&path)
+}
+
+
 
 
 

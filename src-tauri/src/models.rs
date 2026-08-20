@@ -134,3 +134,15 @@ pub struct DnsPingResult {
     pub status: String, // "fast" | "normal" | "slow" | "unreachable"
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LargeFileInfo {
+    pub path: String,
+    pub file_name: String,
+    pub size_bytes: u64,
+    pub size_formatted: String,
+    pub file_type: String, // "virtual_disk" | "archive" | "media" | "installer" | "database" | "other"
+    pub modified_time: String,
+}
+
+
