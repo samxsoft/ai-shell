@@ -89,7 +89,9 @@ export interface ProcessItem {
   status: 'running' | 'sleeping' | 'unresponsive';
   isSafeToKill: boolean;
   category: 'user' | 'system' | 'background';
+  exe_path?: string;
 }
+
 
 export interface ActionCardData {
   id: string;

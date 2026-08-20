@@ -22,6 +22,12 @@ pub async fn kill_process(state: State<'_, ProbeState>, pid: u32) -> Result<bool
 }
 
 #[tauri::command]
+pub async fn batch_kill_processes(state: State<'_, ProbeState>, pids: Vec<u32>) -> Result<usize, String> {
+    crate::probe::common::batch_kill_processes(&state, pids)
+}
+
+
+#[tauri::command]
 pub async fn scan_system_garbage() -> Result<GarbageScanResult, String> {
     #[cfg(target_os = "windows")]
     {

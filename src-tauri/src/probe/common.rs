@@ -243,7 +243,29 @@ pub fn safe_kill_process(state: &ProbeState, pid_u32: u32) -> Result<bool, Strin
     }
 }
 
+/// 批量安全结束多个 PID 进程
+pub fn batch_kill_processes(state: &ProbeState, pids: Vec<u32>) -> Result<usize, String> {
+    let mut sys = state.sys.lock().unwrap();
+    sys.refresh_processes(ProcessesToUpdate::All, true);
+
+    let mut killed_count = 0;
+    for pid_u32 in pids {
+        let pid = Pid::from_u32(pid_u32);
+        if let Some(proc) = sys.process(pid) {
+            let name_lower = proc.name().to_string_lossy().to_lowercase();
+            if !PROTECTED_SYSTEM_PROCESSES.iter().any(|&p| name_lower.contains(p)) && pid_u32 > 4 {
+                if proc.kill() {
+                    killed_count += 1;
+                }
+            }
+        }
+    }
+
+    Ok(killed_count)
+}
+
 fn now_duration_secs(instant: &Instant) -> f64 {
     let elapsed = instant.elapsed();
     elapsed.as_secs() as f64 + (elapsed.subsec_nanos() as f64 / 1_000_000_000.0)
 }
+

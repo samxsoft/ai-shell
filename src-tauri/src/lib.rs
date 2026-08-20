@@ -43,7 +43,9 @@ pub fn run() {
             commands::scan_large_files,
             commands::locate_file,
             commands::delete_large_file,
+            commands::batch_kill_processes,
         ])
+
 
 
 
