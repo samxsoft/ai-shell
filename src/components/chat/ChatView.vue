@@ -28,9 +28,9 @@
       <div class="flex items-center gap-2">
         <!-- Export Markdown Report -->
         <button
-          @click="$emit('exportReport')"
+          @click="handleOpenExportModal"
           class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer border border-slate-700/50"
-          title="将当前诊断过程与结论导出为 Markdown 报告"
+          title="预览并导出当前排障诊断报告"
         >
           <Download class="w-3.5 h-3.5 text-indigo-400" />
           <span>导出排障报告</span>
@@ -142,12 +142,101 @@
       @send="$emit('sendMessage', $event)"
       @select-prompt="$emit('sendMessage', $event)"
     />
+
+    <!-- Diagnostic Report Export & Preview Modal -->
+    <div
+      v-if="showReportModal"
+      class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+    >
+      <div class="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 flex flex-col max-h-[88vh] space-y-4">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
+              <Download class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                系统排障诊断报告预览与导出
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                  Markdown / File
+                </span>
+              </h3>
+              <p class="text-xs text-slate-400">完整包含用户问答、诊断总结 (Executive Summary)、探针日志与处置卡片</p>
+            </div>
+          </div>
+
+          <button
+            @click="showReportModal = false"
+            class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <!-- Markdown Preview Content -->
+        <div class="flex-1 overflow-y-auto bg-slate-950/80 border border-slate-800/80 rounded-xl p-4 text-xs font-mono text-slate-300 leading-relaxed max-h-[50vh] whitespace-pre-wrap select-text">
+          {{ reportMarkdown }}
+        </div>
+
+        <!-- Save Feedback Msg -->
+        <div v-if="reportSaveMsg" class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono text-center">
+          {{ reportSaveMsg }}
+        </div>
+
+        <!-- Actions Toolbar -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+          <div class="text-[11px] text-slate-500">
+            支持直接保存为本地文件或快速拷贝
+          </div>
+
+          <div class="flex items-center gap-2.5">
+            <!-- Copy Button -->
+            <button
+              @click="handleCopyReport"
+              class="px-3.5 py-2 rounded-xl border transition-all text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+              :class="reportCopied ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'"
+            >
+              <CheckCircle2 v-if="reportCopied" class="w-3.5 h-3.5 text-emerald-400" />
+              <Copy v-else class="w-3.5 h-3.5 text-slate-400" />
+              <span>{{ reportCopied ? '已复制到剪贴板！' : '一键复制 Markdown' }}</span>
+            </button>
+
+            <!-- Save File & Open Explorer Button -->
+            <button
+              @click="handleSaveReportFile"
+              :disabled="isSavingReport"
+              class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs flex items-center gap-2 shadow-lg shadow-blue-600/25 transition-all cursor-pointer border border-white/10"
+            >
+              <RotateCw v-if="isSavingReport" class="w-3.5 h-3.5 animate-spin" />
+              <FileDown v-else class="w-3.5 h-3.5" />
+              <span>保存文件并打开目录</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { History, MessageSquare, Download, Plus, ChevronDown, ListOrdered, X, Pencil, Trash2 } from 'lucide-vue-next';
+import {
+  History,
+  MessageSquare,
+  Download,
+  Plus,
+  ChevronDown,
+  ListOrdered,
+  X,
+  Pencil,
+  Trash2,
+  Copy,
+  CheckCircle2,
+  FileDown,
+  RotateCw,
+} from 'lucide-vue-next';
+import { invoke } from '@tauri-apps/api/core';
 import MessageItem from './MessageItem.vue';
 import ChatInput from './ChatInput.vue';
 import type { ChatMessage, ActionCardData, ChatSession } from '@/types';
@@ -172,12 +261,104 @@ const emit = defineEmits<{
 }>();
 
 const showSessionDrawer = ref(false);
+const showReportModal = ref(false);
+const reportMarkdown = ref('');
+const reportCopied = ref(false);
+const reportSaveMsg = ref('');
+const isSavingReport = ref(false);
 const scrollContainer = ref<HTMLElement | null>(null);
 
 const currentSessionTitle = computed(() => {
   const s = props.sessions.find((item) => item.id === props.currentSessionId);
   return s?.title || '排障对话';
 });
+
+function generateReportMarkdown(session: ChatSession): string {
+  let md = `# AI-Shell 系统排障与维护诊断报告\n\n`;
+  md += `- **会话主题**: ${session.title}\n`;
+  md += `- **导出时间**: ${new Date().toLocaleString()}\n`;
+  md += `- **会话创建**: ${session.createdAt}\n`;
+  md += `- **诊断轮次**: ${session.messages.filter((m) => m.sender === 'user').length} 轮问答\n\n`;
+  md += `---\n\n## 📝 诊断全过程记录\n\n`;
+
+  for (const msg of session.messages) {
+    const role = msg.sender === 'user' ? '👤 用户提问' : '🤖 AI 系统管家';
+    md += `### ${role} (${msg.timestamp})\n\n`;
+    md += `${msg.content}\n\n`;
+
+    if (msg.summary) {
+      md += `> 💡 **AI 诊断总结与建议 (Executive Summary)**:\n> \n> ${msg.summary.split('\n').join('\n> ')}\n\n`;
+    }
+
+    if (msg.diagnostics && msg.diagnostics.length > 0) {
+      md += `#### 🔬 底层系统探针采集日志:\n\`\`\`bash\n`;
+      for (const log of msg.diagnostics) {
+        md += `[${log.timestamp}] $ ${log.command}\n${log.output}\n\n`;
+      }
+      md += `\`\`\`\n\n`;
+    }
+
+    if (msg.actionCards && msg.actionCards.length > 0) {
+      md += `#### ⚡ 推荐处置方案与执行状态:\n`;
+      for (const card of msg.actionCards) {
+        const statusText = card.status === 'completed' ? '✅ 已执行' : card.status === 'executing' ? '⏳ 执行中' : '⚪ 待执行';
+        md += `- **[${statusText}] ${card.title}**\n`;
+        md += `  - 影响说明: ${card.impactDescription}\n`;
+        md += `  - 预期收益: ${card.expectedBenefit}\n\n`;
+      }
+    }
+
+    md += `---\n\n`;
+  }
+  return md;
+}
+
+const handleOpenExportModal = () => {
+  const s = props.sessions.find((item) => item.id === props.currentSessionId) || props.sessions[0];
+  if (!s) return;
+  reportMarkdown.value = generateReportMarkdown(s);
+  reportSaveMsg.value = '';
+  reportCopied.value = false;
+  showReportModal.value = true;
+};
+
+const handleCopyReport = async () => {
+  try {
+    await navigator.clipboard.writeText(reportMarkdown.value);
+    reportCopied.value = true;
+    setTimeout(() => {
+      reportCopied.value = false;
+    }, 2000);
+  } catch (e) {
+    console.warn('复制失败:', e);
+  }
+};
+
+const handleSaveReportFile = async () => {
+  isSavingReport.value = true;
+  reportSaveMsg.value = '';
+  const s = props.sessions.find((item) => item.id === props.currentSessionId) || props.sessions[0];
+  const title = s?.title || '排障报告';
+  try {
+    const savedPath = await invoke<string>('save_diagnostic_report', {
+      title,
+      content: reportMarkdown.value,
+    });
+    reportSaveMsg.value = `✅ 已成功保存报告并打开所在目录: ${savedPath}`;
+  } catch (e) {
+    // 浏览器 fallback 下载
+    const blob = new Blob([reportMarkdown.value], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AI-Shell-排障报告-${title.replace(/[\\/:*?"<>|]/g, '_')}-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    reportSaveMsg.value = `✅ 已触发下载: ${a.download}`;
+  } finally {
+    isSavingReport.value = false;
+  }
+};
 
 const selectSession = (id: string) => {
   emit('switchSession', id);

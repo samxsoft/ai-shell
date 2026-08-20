@@ -48,7 +48,9 @@ pub fn run() {
             commands::prune_docker_target,
             commands::diagnose_network_health,
             commands::execute_network_repair,
+            commands::save_diagnostic_report,
         ])
+
 
 
 

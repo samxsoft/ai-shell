@@ -178,6 +178,12 @@ pub async fn execute_network_repair(action: String) -> Result<String, String> {
     crate::probe::network_repair::execute_network_repair(&action)
 }
 
+#[tauri::command]
+pub async fn save_diagnostic_report(title: String, content: String) -> Result<String, String> {
+    crate::probe::disk_radar::save_diagnostic_report_file(&title, &content)
+}
+
+
 
 
 

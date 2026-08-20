@@ -170,3 +170,44 @@ fn format_bytes(bytes: u64) -> String {
         format!("{:.1} MB", mb)
     }
 }
+
+/// 将排障报告保存为本地 Markdown 文件并自动在资源管理器中定位
+pub fn save_diagnostic_report_file(title: &str, content: &str) -> Result<String, String> {
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .unwrap_or_else(|_| ".".to_string());
+
+    let downloads_dir = std::path::Path::new(&home).join("Downloads");
+    let target_dir = if downloads_dir.exists() {
+        downloads_dir
+    } else {
+        let desktop_dir = std::path::Path::new(&home).join("Desktop");
+        if desktop_dir.exists() {
+            desktop_dir
+        } else {
+            std::path::PathBuf::from(&home)
+        }
+    };
+
+    let sanitized_title: String = title
+        .chars()
+        .map(|c| if ['\\', '/', ':', '*', '?', '"', '<', '>', '|'].contains(&c) { '_' } else { c })
+        .collect();
+
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let filename = format!("AI-Shell-排障报告-{}-{}.md", sanitized_title, timestamp);
+    let file_path = target_dir.join(filename);
+
+    std::fs::write(&file_path, content.as_bytes())
+        .map_err(|e| format!("保存报告文件失败: {}", e))?;
+
+    let path_str = file_path.to_string_lossy().to_string();
+    let _ = locate_file_in_explorer(&path_str);
+
+    Ok(path_str)
+}
+
