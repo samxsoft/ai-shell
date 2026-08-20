@@ -15,66 +15,68 @@
       <!-- Quick Action Badges -->
       <div class="flex items-center gap-2">
         <span class="text-xs font-mono px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400">
-          8 项内置工具
+          {{ tools.length }} 项内置工具
         </span>
         <span class="text-xs font-mono px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-1">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           原生探针就绪
         </span>
       </div>
+
     </div>
 
-    <!-- Category Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Category Grid: 一排四个 -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
       <div
         v-for="tool in tools"
         :key="tool.id"
-        class="group p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all duration-200 relative overflow-hidden flex flex-col justify-between"
+        class="group p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all duration-200 relative overflow-hidden flex flex-col justify-between"
       >
         <div>
-          <div class="flex items-start justify-between mb-3">
-            <div class="p-2.5 rounded-xl border flex items-center justify-center" :class="tool.colorClass">
-              <component :is="tool.icon" class="w-5 h-5" />
+          <div class="flex items-start justify-between mb-2.5">
+            <div class="p-2 rounded-xl border flex items-center justify-center" :class="tool.colorClass">
+              <component :is="tool.icon" class="w-4 h-4" />
             </div>
-            <span class="text-[11px] font-mono px-2 py-0.5 rounded border" :class="tool.badgeClass">
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded border" :class="tool.badgeClass">
               {{ tool.category }}
             </span>
           </div>
 
-          <h3 class="text-sm font-semibold text-slate-200 group-hover:text-blue-400 transition-colors">
+          <h3 class="text-xs font-semibold text-slate-200 group-hover:text-blue-400 transition-colors line-clamp-1">
             {{ tool.name }}
           </h3>
-          <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+          <p class="text-[11px] text-slate-400 mt-1 leading-relaxed line-clamp-2">
             {{ tool.description }}
           </p>
         </div>
 
-        <div class="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between">
-          <span class="text-[11px] text-slate-500 font-mono">{{ tool.statusText }}</span>
+        <div class="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between gap-1">
+          <span class="text-[10px] text-slate-500 font-mono truncate">{{ tool.statusText }}</span>
           
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 flex-shrink-0">
             <!-- 直接打开内置可视化交互工具 -->
             <button
               v-if="tool.hasDirectModal"
               @click="openDirectTool(tool.id)"
-              class="px-2.5 py-1 text-xs font-medium text-blue-400 hover:text-white bg-blue-500/10 hover:bg-blue-600 rounded-lg border border-blue-500/20 transition-all cursor-pointer flex items-center gap-1"
+              class="px-2 py-0.5 text-[11px] font-medium text-blue-400 hover:text-white bg-blue-500/10 hover:bg-blue-600 rounded-lg border border-blue-500/20 transition-all cursor-pointer flex items-center gap-1"
             >
               <Sliders class="w-3 h-3" />
-              <span>打开工具</span>
+              <span>打开</span>
             </button>
 
             <!-- 唤起 AI 智能体排障 -->
             <button
               @click="$emit('selectTool', tool.prompt)"
-              class="px-2.5 py-1 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer flex items-center gap-1"
+              class="px-2 py-0.5 text-[11px] font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer flex items-center gap-1"
             >
               <Bot class="w-3 h-3 text-blue-400" />
-              <span>AI 诊断</span>
+              <span>AI</span>
             </button>
           </div>
         </div>
       </div>
     </div>
+
 
     <!-- ================= 1. 真实端口排查弹窗 ================= -->
     <div
@@ -328,6 +330,10 @@ import {
   Search,
   Loader2,
   RotateCw,
+  Cpu,
+  Database,
+  Layers,
+  Wifi,
 } from 'lucide-vue-next';
 import { invoke } from '@tauri-apps/api/core';
 import type { AutostartEntry, DnsPingResult, PortOccupantInfo } from '@/types';
@@ -502,7 +508,7 @@ const tools = [
   },
   {
     id: 'disk',
-    name: 'C 盘深度垃圾清理',
+    name: 'C 盘深度垃圾与更新缓存清理',
     category: '存储空间',
     description: '安全扫描系统临时文件、Windows Update 安装缓存和应用崩溃转储日志，安全释放可观的系统盘空间。',
     icon: Trash2,
@@ -512,5 +518,54 @@ const tools = [
     prompt: 'C 盘空间不足，帮我扫描一下系统有哪些临时垃圾和更新缓存可以安全清理。',
     hasDirectModal: false,
   },
+  {
+    id: 'large_files',
+    name: '磁盘大文件雷达与占用分析',
+    category: '空间透视',
+    description: '多线程秒级排查磁盘中 >1GB 的巨型文件、隐藏虚拟磁盘镜像与下载残留，揪出吃盘真凶。',
+    icon: Database,
+    colorClass: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
+    badgeClass: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300',
+    statusText: '巨型文件秒级雷达',
+    prompt: '帮我排查一下电脑磁盘里有哪些占用超过 1GB 的大文件和隐藏镜像。',
+    hasDirectModal: false,
+  },
+  {
+    id: 'process_killer',
+    name: '活跃进程急速降温与查杀',
+    category: '性能调优',
+    description: '全盘扫描 CPU 与内存排名前列的活跃进程，自动识别死锁、卡死无响应的后台流氓应用并安全查杀。',
+    icon: Cpu,
+    colorClass: 'bg-violet-500/10 border-violet-500/30 text-violet-400',
+    badgeClass: 'bg-violet-500/10 border-violet-500/20 text-violet-300',
+    statusText: '智能白名单保护',
+    prompt: '帮我查看当前系统中 CPU 和内存占用最高的异常进程，并推荐可以结束的项。',
+    hasDirectModal: false,
+  },
+  {
+    id: 'docker',
+    name: 'Docker 容器与镜像专项体检',
+    category: '开发运维',
+    description: '自动分析本机未运行容器、悬挂镜像 (Dangling) 与无主存储卷，一键清理开发构建残留空间。',
+    icon: Layers,
+    colorClass: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
+    badgeClass: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
+    statusText: '容器与构建缓存排查',
+    prompt: '帮我检查一下本机 Docker 环境，看看有哪些停止的容器和无用的悬挂镜像可以清理。',
+    hasDirectModal: false,
+  },
+  {
+    id: 'network_repair',
+    name: 'DNS 缓存强制刷新与网络急救',
+    category: '网络急救',
+    description: '一键刷新系统本地 DNS 解析缓存并重置 TCP/IP 网络栈，快速解决连着 WiFi 却打不开网页等异常故障。',
+    icon: Wifi,
+    colorClass: 'bg-teal-500/10 border-teal-500/30 text-teal-400',
+    badgeClass: 'bg-teal-500/10 border-teal-500/20 text-teal-300',
+    statusText: '一键网络栈复位',
+    prompt: '网页打不开了，网络连接异常，帮我执行网络急救与 DNS 刷新。',
+    hasDirectModal: false,
+  },
 ];
 </script>
+
