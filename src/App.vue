@@ -58,6 +58,9 @@
         />
       </main>
     </div>
+
+    <!-- 全局自定义右键上下文菜单 -->
+    <CustomContextMenu @ask-ai="handleAskAiFromSelection" />
   </div>
 </template>
 
@@ -70,6 +73,7 @@ import ChatView from '@/components/chat/ChatView.vue';
 import MonitorView from '@/components/monitor/MonitorView.vue';
 import ToolboxView from '@/components/toolbox/ToolboxView.vue';
 import SettingsView from '@/components/settings/SettingsView.vue';
+import CustomContextMenu from '@/components/common/CustomContextMenu.vue';
 import { useSystemMock } from '@/composables/useSystemMock';
 import { useAgentChat } from '@/composables/useAgentChat';
 
@@ -131,4 +135,8 @@ const handleTopQuickCheck = () => {
   sendMessage('进行全系统深度体检，列出所有性能瓶颈与优化建议。');
 };
 
+const handleAskAiFromSelection = (prompt: string) => {
+  activeTab.value = 'chat';
+  sendMessage(prompt);
+};
 </script>

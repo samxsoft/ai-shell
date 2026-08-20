@@ -1,7 +1,8 @@
 <template>
-  <div class="h-full flex flex-col justify-between overflow-hidden relative select-none">
+  <div class="h-full flex flex-col justify-between overflow-hidden relative">
     <!-- Top Session Toolbar -->
-    <div class="h-10 px-4 border-b border-slate-800/60 bg-slate-950/40 flex items-center justify-between z-10">
+    <div class="h-10 px-4 border-b border-slate-800/60 bg-slate-950/40 flex items-center justify-between z-10 select-none">
+
       <!-- Left: Session Switcher & Current Title -->
       <div class="flex items-center gap-2">
         <button
