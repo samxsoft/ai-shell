@@ -1,6 +1,6 @@
 use crate::models::{GarbageItem, GarbageScanResult};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// 刷新 Windows 本地 DNS 解析缓存
@@ -17,40 +17,27 @@ pub fn flush_dns() -> Result<String, String> {
     }
 }
 
-
 /// 扫描 Windows 临时垃圾文件与缓存
 pub fn scan_garbage() -> GarbageScanResult {
     let mut items = Vec::new();
     let mut total_bytes = 0;
 
-    // 1. 用户临时目录 (%TEMP%)
-    if let Ok(temp_path) = std::env::var("TEMP") {
-        let path_obj = Path::new(&temp_path);
-        if path_obj.exists() {
-            let size = calculate_dir_size(path_obj);
-            total_bytes += size;
-            items.push(GarbageItem {
-                name: "用户临时文件 (User Temp)".to_string(),
-                path: temp_path,
-                size_bytes: size,
-                size_formatted: format_bytes(size),
-                description: "应用程序运行中生成的临时缓存与中间文件".to_string(),
-            });
-        }
-    }
+    let target_dirs = get_windows_garbage_targets();
 
-    // 2. Windows 系统临时目录 (C:\Windows\Temp)
-    let win_temp = Path::new("C:\\Windows\\Temp");
-    if win_temp.exists() {
-        let size = calculate_dir_size(win_temp);
-        total_bytes += size;
-        items.push(GarbageItem {
-            name: "系统临时缓存 (Windows Temp)".to_string(),
-            path: win_temp.to_string_lossy().to_string(),
-            size_bytes: size,
-            size_formatted: format_bytes(size),
-            description: "Windows 安装更新与系统组件产生的遗留临时缓存".to_string(),
-        });
+    for (name, path_buf, desc) in target_dirs {
+        if path_buf.exists() {
+            let size = calculate_dir_size(&path_buf);
+            if size > 0 {
+                total_bytes += size;
+                items.push(GarbageItem {
+                    name,
+                    path: path_buf.to_string_lossy().to_string(),
+                    size_bytes: size,
+                    size_formatted: format_bytes(size),
+                    description: desc,
+                });
+            }
+        }
     }
 
     GarbageScanResult {
@@ -63,12 +50,73 @@ pub fn scan_garbage() -> GarbageScanResult {
 /// 安全清理指定的临时文件目录 (跳过被锁定的活跃文件)
 pub fn clean_garbage() -> Result<u64, String> {
     let mut freed_bytes = 0;
+    let target_dirs = get_windows_garbage_targets();
 
-    if let Ok(temp_path) = std::env::var("TEMP") {
-        freed_bytes += safe_clean_dir(Path::new(&temp_path));
+    for (_name, path_buf, _desc) in target_dirs {
+        if path_buf.exists() {
+            freed_bytes += safe_clean_dir(&path_buf);
+        }
     }
 
     Ok(freed_bytes)
+}
+
+fn get_windows_garbage_targets() -> Vec<(String, PathBuf, String)> {
+    let mut targets = Vec::new();
+
+    // 1. 用户临时目录 (%TEMP%)
+    if let Ok(temp_path) = std::env::var("TEMP") {
+        targets.push((
+            "用户临时缓存 (User Temp)".to_string(),
+            PathBuf::from(temp_path),
+            "运行软件时解压的临时安装包与临时中间数据".to_string(),
+        ));
+    }
+
+    // 2. Windows 系统临时目录 (C:\Windows\Temp)
+    targets.push((
+        "系统临时缓存 (Windows Temp)".to_string(),
+        PathBuf::from("C:\\Windows\\Temp"),
+        "Windows 系统组件与安装程序遗留的临时日志与缓存".to_string(),
+    ));
+
+    // 3. Windows Update 历史安装下载包 (SoftwareDistribution\Download)
+    targets.push((
+        "Windows Update 更新下载包".to_string(),
+        PathBuf::from("C:\\Windows\\SoftwareDistribution\\Download"),
+        "系统更新补丁下载完成后遗留的旧安装镜像，已安装完毕可安全清理".to_string(),
+    ));
+
+    // 4. 系统崩溃转储与错误日志 (Minidump)
+    targets.push((
+        "系统崩溃转储 (Minidump)".to_string(),
+        PathBuf::from("C:\\Windows\\Minidump"),
+        "系统蓝屏或崩溃时生成的内存转储文件".to_string(),
+    ));
+
+    // 5. 应用崩溃转储 (CrashDumps)
+    if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
+        targets.push((
+            "应用程序崩溃转储 (CrashDumps)".to_string(),
+            PathBuf::from(&local_appdata).join("CrashDumps"),
+            "第三方软件意外闪退时保存的诊断内存快照".to_string(),
+        ));
+
+        targets.push((
+            "图片缩略图索引缓存 (Thumbnails)".to_string(),
+            PathBuf::from(&local_appdata).join("Microsoft\\Windows\\Explorer"),
+            "资源管理器生成的缩略图预览缓存数据库".to_string(),
+        ));
+    }
+
+    // 6. Windows 日志文件 (Logs)
+    targets.push((
+        "Windows CBS 与系统日志".to_string(),
+        PathBuf::from("C:\\Windows\\Logs\\CBS"),
+        "Windows 组件维护与升级产生的历史日志文件".to_string(),
+    ));
+
+    targets
 }
 
 fn calculate_dir_size(path: &Path) -> u64 {
@@ -95,6 +143,7 @@ fn safe_clean_dir(path: &Path) -> u64 {
             if let Ok(meta) = entry.metadata() {
                 if meta.is_file() {
                     let len = meta.len();
+                    // 若文件被占用则安全跳过
                     if fs::remove_file(&p).is_ok() {
                         freed += len;
                     }

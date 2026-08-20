@@ -57,6 +57,20 @@ export interface DnsPingResult {
   status: 'fast' | 'normal' | 'slow' | 'unreachable';
 }
 
+export interface GarbageItem {
+  name: string;
+  path: string;
+  sizeBytes: number;
+  sizeFormatted: string;
+  description: string;
+}
+
+export interface GarbageScanResult {
+  totalBytes: number;
+  totalFormatted: string;
+  items: GarbageItem[];
+}
+
 export interface ProcessItem {
   pid: number;
   name: string;
