@@ -57,9 +57,19 @@
           <ListOrdered class="w-3.5 h-3.5 text-blue-400" />
           排障诊断历史列表
         </span>
-        <button @click="showSessionDrawer = false" class="text-slate-500 hover:text-white cursor-pointer">
-          <X class="w-3.5 h-3.5" />
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            @click="$emit('clearAllSessions'); showSessionDrawer = false"
+            class="text-[11px] text-rose-400/80 hover:text-rose-300 flex items-center gap-1 cursor-pointer hover:bg-rose-500/10 px-1.5 py-0.5 rounded transition-colors"
+            title="一键清空所有历史排障会话记录"
+          >
+            <Trash2 class="w-3 h-3" />
+            <span>清空全部</span>
+          </button>
+          <button @click="showSessionDrawer = false" class="text-slate-500 hover:text-white cursor-pointer">
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       <!-- Sessions List -->
@@ -98,10 +108,16 @@
 
       <!-- Drawer Footer -->
       <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
-        <span>共 {{ sessions.length }} 个诊断会话</span>
+        <button
+          @click="$emit('clearAllSessions'); showSessionDrawer = false"
+          class="text-rose-400/80 hover:text-rose-300 flex items-center gap-1 cursor-pointer hover:underline"
+        >
+          <Trash2 class="w-3 h-3" />
+          <span>清空所有会话</span>
+        </button>
         <button
           @click="$emit('newSession'); showSessionDrawer = false"
-          class="text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+          class="text-blue-400 hover:underline flex items-center gap-1 cursor-pointer font-medium"
         >
           <Plus class="w-3 h-3" />
           <span>开启新诊断</span>
@@ -151,6 +167,7 @@ const emit = defineEmits<{
   (e: 'switchSession', id: string): void;
   (e: 'renameSession', id: string, newTitle: string): void;
   (e: 'deleteSession', id: string): void;
+  (e: 'clearAllSessions'): void;
   (e: 'exportReport'): void;
 }>();
 

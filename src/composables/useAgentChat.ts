@@ -145,7 +145,22 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
     saveSessions();
   };
 
+  // 一键清理所有历史会话
+  const clearAllSessions = () => {
+    if (!confirm('确定要清空全部历史排障会话记录吗？\n所有旧对话将被删除，并开启全新的诊断会话。')) {
+      return;
+    }
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      console.warn('Failed to clear chat sessions from localStorage:', e);
+    }
+    sessions.value = [];
+    createNewSession();
+  };
+
   // 导出当前会话为 Markdown 排障报告
+
   const exportSessionToMarkdown = () => {
     const session = currentSession.value;
     if (!session) return;
@@ -952,7 +967,9 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
     switchSession,
     renameSession,
     deleteSession,
+    clearAllSessions,
     exportSessionToMarkdown,
+
     sendMessage,
     handleActionExecution,
   };

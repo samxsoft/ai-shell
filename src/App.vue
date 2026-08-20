@@ -32,6 +32,7 @@
           @switch-session="switchSession"
           @rename-session="renameSession"
           @delete-session="deleteSession"
+          @clear-all-sessions="clearAllSessions"
           @export-report="exportSessionToMarkdown"
         />
 
@@ -94,6 +95,7 @@ const {
   switchSession,
   renameSession,
   deleteSession,
+  clearAllSessions,
   exportSessionToMarkdown,
   sendMessage,
   handleActionExecution,
