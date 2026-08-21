@@ -49,6 +49,7 @@ pub fn run() {
             commands::diagnose_network_health,
             commands::execute_network_repair,
             commands::save_diagnostic_report,
+            commands::get_app_version,
         ])
 
 

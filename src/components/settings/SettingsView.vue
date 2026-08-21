@@ -178,16 +178,46 @@
         </div>
       </div>
     </div>
+
+    <!-- 关于与系统版本 -->
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-sm">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+          <Info class="w-4 h-4" />
+        </div>
+        <div>
+          <h2 class="text-base font-semibold text-slate-100">关于 AI-Shell</h2>
+          <p class="text-xs text-slate-400">智能桌面运维与系统管家</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+        <div class="p-3.5 rounded-xl bg-slate-950/50 border border-slate-800/80">
+          <div class="text-[11px] text-slate-400 mb-1">当前版本 (tauri.conf.json)</div>
+          <div class="text-sm font-semibold font-mono text-blue-400">v{{ version }}</div>
+        </div>
+        <div class="p-3.5 rounded-xl bg-slate-950/50 border border-slate-800/80">
+          <div class="text-[11px] text-slate-400 mb-1">底层架构引擎</div>
+          <div class="text-sm font-semibold text-slate-200">Tauri v2 + Rust + Vue 3</div>
+        </div>
+        <div class="p-3.5 rounded-xl bg-slate-950/50 border border-slate-800/80">
+          <div class="text-[11px] text-slate-400 mb-1">运行环境</div>
+          <div class="text-sm font-semibold text-slate-200">桌面原生轻量客户端</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Bot, Shield, Sparkles, Loader2, Check, AlertCircle, Palette, Moon, Sun, Monitor } from 'lucide-vue-next';
+import { Bot, Shield, Sparkles, Loader2, Check, AlertCircle, Palette, Moon, Sun, Monitor, Info } from 'lucide-vue-next';
 import { useSettings } from '@/composables/useSettings';
+import { useAppInfo } from '@/composables/useAppInfo';
 import { testAiConnection } from '@/services/aiClient';
 
 const { settings, switchProvider, hasConfiguredApiKey, setTheme } = useSettings();
+const { version } = useAppInfo();
 
 const isTesting = ref(false);
 const testSuccess = ref(false);

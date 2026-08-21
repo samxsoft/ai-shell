@@ -10,7 +10,7 @@
           <div>
             <h1 class="text-sm font-semibold text-slate-100 tracking-wide flex items-center gap-1.5">
               AI-Shell
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-mono font-medium border border-blue-500/20">v0.1</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-mono font-medium border border-blue-500/20">v{{ version }}</span>
             </h1>
             <p class="text-[11px] text-slate-400">智能系统管家</p>
           </div>
@@ -142,6 +142,7 @@ import { MessageSquare, Activity, Wrench, Settings, Cpu } from 'lucide-vue-next'
 import type { NavTab, SystemMetrics } from '@/types';
 
 import { useSettings } from '@/composables/useSettings';
+import { useAppInfo } from '@/composables/useAppInfo';
 
 defineProps<{
   activeTab: NavTab;
@@ -153,6 +154,7 @@ defineEmits<{
 }>();
 
 const { settings } = useSettings();
+const { version } = useAppInfo();
 
 const providerConfigs = {
   deepseek: {

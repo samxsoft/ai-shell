@@ -183,6 +183,11 @@ pub async fn save_diagnostic_report(title: String, content: String) -> Result<St
     crate::probe::disk_radar::save_diagnostic_report_file(&title, &content)
 }
 
+#[tauri::command]
+pub fn get_app_version(app: tauri::AppHandle) -> String {
+    app.package_info().version.to_string()
+}
+
 
 
 
