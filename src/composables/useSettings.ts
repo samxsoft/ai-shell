@@ -37,7 +37,42 @@ function loadSettings(): UserSettings {
 // 全局单例响应式 settings
 const settings = reactive<UserSettings>(loadSettings());
 
-// 自动保存
+// 应用主题到 DOM
+export function applyTheme(theme: UserSettings['theme']) {
+  if (typeof window === 'undefined') return;
+  const root = document.documentElement;
+  let resolvedTheme = theme;
+  if (theme === 'system') {
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    resolvedTheme = isDark ? 'dark' : 'light';
+  }
+
+  if (resolvedTheme === 'light') {
+    root.classList.remove('dark');
+    root.classList.add('light');
+    root.setAttribute('data-theme', 'light');
+    root.style.colorScheme = 'light';
+  } else {
+    root.classList.remove('light');
+    root.classList.add('dark');
+    root.setAttribute('data-theme', 'dark');
+    root.style.colorScheme = 'dark';
+  }
+}
+
+// 监听系统色彩偏好变化
+if (typeof window !== 'undefined') {
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  mediaQuery.addEventListener('change', () => {
+    if (settings.theme === 'system') {
+      applyTheme('system');
+    }
+  });
+  // 初始化应用主题
+  applyTheme(settings.theme || 'dark');
+}
+
+// 自动保存与主题同步
 watch(
   settings,
   (val) => {
@@ -46,6 +81,7 @@ watch(
     } catch (e) {
       console.warn('保存配置到 localStorage 失败:', e);
     }
+    applyTheme(val.theme || 'dark');
   },
   { deep: true }
 );
@@ -64,9 +100,25 @@ export function useSettings() {
     return Boolean(settings.apiKey && settings.apiKey.trim().length > 5);
   };
 
+  const setTheme = (theme: UserSettings['theme']) => {
+    settings.theme = theme;
+  };
+
+  const toggleTheme = () => {
+    if (settings.theme === 'dark') {
+      settings.theme = 'light';
+    } else {
+      settings.theme = 'dark';
+    }
+  };
+
   return {
     settings,
     switchProvider,
     hasConfiguredApiKey,
+    setTheme,
+    toggleTheme,
+    applyTheme,
   };
 }
+

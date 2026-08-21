@@ -97,6 +97,50 @@
       </div>
     </div>
 
+    <!-- Appearance & Theme Section -->
+    <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2">
+            <Palette class="w-4 h-4 text-purple-400" />
+            <span>界面外观与主题风格 (Theme & Appearance)</span>
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">支持深色极客黑、全新清新浅色与操作系统色彩偏好联动。</p>
+        </div>
+
+        <span class="text-xs px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-medium">
+          当前：{{ settings.theme === 'dark' ? '深色模式' : settings.theme === 'light' ? '浅色模式' : '跟随系统' }}
+        </span>
+      </div>
+
+      <!-- Theme Selection Radio Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+        <div
+          v-for="t in themeOptions"
+          :key="t.id"
+          @click="setTheme(t.id as any)"
+          class="p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between group"
+          :class="settings.theme === t.id ? 'bg-purple-600/15 border-purple-500/50 shadow-sm shadow-purple-500/10 ring-1 ring-purple-500/30' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'"
+        >
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <div
+                class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                :class="settings.theme === t.id ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400 group-hover:text-slate-200'"
+              >
+                <component :is="t.icon" class="w-4 h-4" />
+              </div>
+              <div class="font-medium text-xs text-slate-200">{{ t.name }}</div>
+            </div>
+            <span v-if="t.tag" class="text-[10px] px-1.5 py-0.5 rounded font-medium" :class="settings.theme === t.id ? 'bg-purple-500/20 text-purple-300' : 'bg-slate-800 text-slate-400 border border-slate-700'">
+              {{ t.tag }}
+            </span>
+          </div>
+          <div class="text-[11px] text-slate-500 leading-snug">{{ t.desc }}</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Security & Guardrails -->
     <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
       <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2">
@@ -139,15 +183,39 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Bot, Shield, Sparkles, Loader2, Check, AlertCircle } from 'lucide-vue-next';
+import { Bot, Shield, Sparkles, Loader2, Check, AlertCircle, Palette, Moon, Sun, Monitor } from 'lucide-vue-next';
 import { useSettings } from '@/composables/useSettings';
 import { testAiConnection } from '@/services/aiClient';
 
-const { settings, switchProvider, hasConfiguredApiKey } = useSettings();
+const { settings, switchProvider, hasConfiguredApiKey, setTheme } = useSettings();
 
 const isTesting = ref(false);
 const testSuccess = ref(false);
 const testResult = ref('');
+
+const themeOptions = [
+  {
+    id: 'dark',
+    name: '深色极客黑',
+    tag: '经典',
+    icon: Moon,
+    desc: '沉浸式暗黑黑曜石美学，低功耗防眩光护眼。',
+  },
+  {
+    id: 'light',
+    name: '明亮清新白',
+    tag: '全新加入',
+    icon: Sun,
+    desc: '高对比度清爽现代排版，白天办公与诊断清晰利落。',
+  },
+  {
+    id: 'system',
+    name: '跟随操作系统',
+    tag: '自动',
+    icon: Monitor,
+    desc: '自动侦测并响应 Windows / macOS 系统的明暗色彩偏好。',
+  },
+];
 
 const providers = [
   { id: 'deepseek', name: 'DeepSeek (推荐)', tag: '超高性价比', desc: '深度推理能力极强，推荐 DeepSeek-V3 / R1 模型。' },
@@ -166,3 +234,4 @@ const handleTestConnection = async () => {
   testResult.value = res.message;
 };
 </script>
+

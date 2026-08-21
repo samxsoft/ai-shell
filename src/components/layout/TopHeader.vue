@@ -44,6 +44,17 @@
         <span>深度体检</span>
       </button>
 
+      <!-- Theme Switcher Button -->
+      <button
+        @click.stop="toggleTheme"
+        :title="settings.theme === 'dark' ? '当前：深色模式 (点击切换浅色)' : settings.theme === 'light' ? '当前：浅色模式 (点击切换深色)' : '当前：跟随系统模式 (点击切换)'"
+        class="flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition-all cursor-pointer"
+      >
+        <Sun v-if="settings.theme === 'light'" class="w-3.5 h-3.5 text-amber-500 hover:rotate-45 transition-transform" />
+        <Moon v-else-if="settings.theme === 'dark'" class="w-3.5 h-3.5 text-blue-400 hover:-rotate-12 transition-transform" />
+        <Monitor v-else class="w-3.5 h-3.5 text-emerald-400" />
+      </button>
+
       <!-- Sandbox Shield Badge -->
       <div class="hidden sm:flex items-center gap-1 text-slate-400 text-[11px] font-mono bg-slate-900/60 px-2 py-0.5 rounded border border-slate-800 mr-2">
         <ShieldCheck class="w-3 h-3 text-emerald-400" />
@@ -84,10 +95,13 @@
 </template>
 
 <script setup lang="ts">
-import { Cpu, HardDrive, ArrowDownUp, Sparkles, ShieldCheck, Minus, Square, X } from 'lucide-vue-next';
+import { Cpu, HardDrive, ArrowDownUp, Sparkles, ShieldCheck, Minus, Square, X, Sun, Moon, Monitor } from 'lucide-vue-next';
 import type { NavTab, SystemMetrics } from '@/types';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
+import { useSettings } from '@/composables/useSettings';
+
+const { settings, toggleTheme } = useSettings();
 
 defineProps<{
   activeTab: NavTab;
