@@ -134,6 +134,8 @@
         :message="msg"
         @execute-action="$emit('executeAction', $event)"
       />
+      <!-- Invisible anchor for bulletproof instant scrollIntoView -->
+      <div ref="bottomAnchor" class="h-px w-full pointer-events-none opacity-0"></div>
     </div>
 
     <!-- Bottom Input -->
@@ -251,6 +253,7 @@ const props = defineProps<{
   currentSessionId: string;
   quickPrompts: { label: string; query: string }[];
   isGenerating: boolean;
+  isActive?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -271,6 +274,7 @@ const reportCopied = ref(false);
 const reportSaveMsg = ref('');
 const isSavingReport = ref(false);
 const scrollContainer = ref<HTMLElement | null>(null);
+const bottomAnchor = ref<HTMLElement | null>(null);
 
 const currentSessionTitle = computed(() => {
   const s = props.sessions.find((item) => item.id === props.currentSessionId);
@@ -376,30 +380,54 @@ const promptRename = (session: ChatSession) => {
   }
 };
 
-const scrollToBottom = async () => {
-  await nextTick();
-  if (scrollContainer.value) {
-    scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
-  }
-  // 异步二次校准（防止 Markdown 表格、折叠块或代码高亮二次渲染撑开高度）
-  setTimeout(() => {
+const scrollToBottom = () => {
+  nextTick(() => {
+    bottomAnchor.value?.scrollIntoView({ block: 'end', behavior: 'instant' });
     if (scrollContainer.value) {
       scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
     }
-  }, 50);
-  setTimeout(() => {
+  });
+
+  // RAF 确保在浏览器绘制下一帧时精确贴底
+  requestAnimationFrame(() => {
+    bottomAnchor.value?.scrollIntoView({ block: 'end', behavior: 'instant' });
     if (scrollContainer.value) {
       scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
     }
-  }, 180);
+  });
+
+  // 异步二次校准（防止 Markdown 表格、折叠块或代码高亮异步排版撑开高度）
+  setTimeout(() => {
+    bottomAnchor.value?.scrollIntoView({ block: 'end', behavior: 'instant' });
+    if (scrollContainer.value) {
+      scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
+    }
+  }, 60);
+
+  setTimeout(() => {
+    bottomAnchor.value?.scrollIntoView({ block: 'end', behavior: 'instant' });
+    if (scrollContainer.value) {
+      scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
+    }
+  }, 200);
 };
 
-// 1. 从其他页面切换进入 AI 排障页面时，自动瞬移到最新对话底部
+// 1. 初次挂载时滚到底部
 onMounted(() => {
   scrollToBottom();
 });
 
-// 2. 切换历史会话时自动滚到底部
+// 2. 从监控/工具箱/设置等其他 Tab 切回 AI 排障 Tab 时，触发贴底
+watch(
+  () => props.isActive,
+  (active) => {
+    if (active) {
+      scrollToBottom();
+    }
+  }
+);
+
+// 3. 切换历史会话时自动滚到底部
 watch(
   () => props.currentSessionId,
   () => {
@@ -407,7 +435,7 @@ watch(
   }
 );
 
-// 3. 消息流式输出或新增时自动滚到底部
+// 4. 消息流式输出或新增时自动滚到底部
 watch(
   () => props.messages,
   () => {

@@ -20,7 +20,8 @@
       <main class="flex-1 overflow-hidden relative">
         <!-- 1. Chat Tab -->
         <ChatView
-          v-if="activeTab === 'chat'"
+          v-show="activeTab === 'chat'"
+          :is-active="activeTab === 'chat'"
           :messages="messages"
           :sessions="sessions"
           :current-session-id="currentSessionId"
@@ -36,10 +37,9 @@
           @export-report="exportSessionToMarkdown"
         />
 
-
         <!-- 2. Monitor Tab -->
         <MonitorView
-          v-else-if="activeTab === 'monitor'"
+          v-show="activeTab === 'monitor'"
           :metrics="metrics"
           :processes="processes"
           @kill-process="handleKillProcess"
@@ -47,14 +47,13 @@
 
         <!-- 3. Toolbox Tab -->
         <ToolboxView
-          v-else-if="activeTab === 'toolbox'"
+          v-show="activeTab === 'toolbox'"
           @select-tool="handleToolSelect"
         />
 
-
         <!-- 4. Settings Tab -->
         <SettingsView
-          v-else-if="activeTab === 'settings'"
+          v-show="activeTab === 'settings'"
         />
       </main>
     </div>
