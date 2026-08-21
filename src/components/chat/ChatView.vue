@@ -221,7 +221,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import {
   History,
   MessageSquare,
@@ -381,8 +381,33 @@ const scrollToBottom = async () => {
   if (scrollContainer.value) {
     scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
   }
+  // 异步二次校准（防止 Markdown 表格、折叠块或代码高亮二次渲染撑开高度）
+  setTimeout(() => {
+    if (scrollContainer.value) {
+      scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
+    }
+  }, 50);
+  setTimeout(() => {
+    if (scrollContainer.value) {
+      scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
+    }
+  }, 180);
 };
 
+// 1. 从其他页面切换进入 AI 排障页面时，自动瞬移到最新对话底部
+onMounted(() => {
+  scrollToBottom();
+});
+
+// 2. 切换历史会话时自动滚到底部
+watch(
+  () => props.currentSessionId,
+  () => {
+    scrollToBottom();
+  }
+);
+
+// 3. 消息流式输出或新增时自动滚到底部
 watch(
   () => props.messages,
   () => {
