@@ -102,6 +102,8 @@ html.light .glass-card {
   color: #e2e8f0;
   font-size: 0.875rem;
   line-height: 1.625;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .markdown-body p {
@@ -152,6 +154,11 @@ html.light .glass-card {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.8125rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  display: inline-block;
+  max-width: 100%;
 }
 
 .markdown-body pre {
@@ -162,6 +169,7 @@ html.light .glass-card {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   overflow-x: auto;
+  max-width: 100%;
 }
 
 .markdown-body pre code {
@@ -187,17 +195,24 @@ html.light .glass-card {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   font-size: 0.8125rem;
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .markdown-body th, .markdown-body td {
   border: 1px solid #1e293b;
   padding: 0.4rem 0.6rem;
   text-align: left;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  max-width: 480px;
 }
 
 .markdown-body th {
   background-color: #0f172a;
   color: #93c5fd;
+  white-space: nowrap;
 }
 
 /* Markdown Rendering Styles - Light Overrides */

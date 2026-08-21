@@ -10,10 +10,10 @@
 
     <!-- Message Bubble -->
     <div
-      class="max-w-[85%] rounded-2xl p-4 shadow-sm"
+      class="max-w-[88%] min-w-0 rounded-2xl p-4 shadow-sm overflow-hidden"
       :class="[
         message.sender === 'user'
-          ? 'bg-blue-600 text-white rounded-tr-sm ml-12 text-sm leading-relaxed whitespace-pre-wrap'
+          ? 'bg-blue-600 text-white rounded-tr-sm ml-12 text-sm leading-relaxed whitespace-pre-wrap break-words'
           : 'bg-slate-900/90 text-slate-200 border border-slate-800/80 rounded-tl-sm'
       ]"
     >
@@ -22,9 +22,9 @@
         {{ message.content }}
       </div>
 
-      <div v-else class="leading-relaxed">
+      <div v-else class="leading-relaxed min-w-0">
         <template v-if="message.content">
-          <div class="markdown-body" v-html="renderMarkdown(message.content)"></div>
+          <div class="markdown-body min-w-0" v-html="renderMarkdown(message.content)"></div>
         </template>
         
         <!-- Streaming Thinking Indicator & Spinner -->
