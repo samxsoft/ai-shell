@@ -20,7 +20,7 @@
         <span class="text-slate-600">•</span>
         <span class="flex items-center gap-1 font-mono">
           <HardDrive class="w-3.5 h-3.5 text-indigo-400" />
-          {{ metrics.memoryUsagePercent }}% 内存
+          {{ metrics.memoryUsagePercent }}% {{ t('sidebar.memoryUsage') }}
         </span>
         <span class="text-slate-600">•</span>
         <span class="flex items-center gap-1 font-mono">
@@ -34,20 +34,30 @@
     <div data-tauri-drag-region class="flex-1 h-full"></div>
 
     <!-- Right Actions & Window Controls -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-1.5">
       <!-- Quick Check Button -->
       <button
         @click.stop="$emit('quickCheck')"
         class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-sm shadow-blue-500/20 transition-all cursor-pointer mr-1"
       >
         <Sparkles class="w-3 h-3" />
-        <span>深度体检</span>
+        <span>{{ t('header.quickScan') }}</span>
+      </button>
+
+      <!-- Language Switcher Button -->
+      <button
+        @click.stop="toggleLanguage"
+        :title="currentLangTooltip"
+        class="flex items-center gap-1 px-1.5 h-7 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition-all cursor-pointer text-[11px] font-medium"
+      >
+        <Languages class="w-3.5 h-3.5 text-blue-400" />
+        <span class="font-mono text-[10px] uppercase text-slate-300">{{ locale === 'zh-CN' ? '中文' : 'EN' }}</span>
       </button>
 
       <!-- Theme Switcher Button -->
       <button
         @click.stop="toggleTheme"
-        :title="settings.theme === 'dark' ? '当前：深色模式 (点击切换浅色)' : settings.theme === 'light' ? '当前：浅色模式 (点击切换深色)' : '当前：跟随系统模式 (点击切换)'"
+        :title="themeTooltip"
         class="flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition-all cursor-pointer"
       >
         <Sun v-if="settings.theme === 'light'" class="w-3.5 h-3.5 text-amber-500 hover:rotate-45 transition-transform" />
@@ -55,18 +65,12 @@
         <Monitor v-else class="w-3.5 h-3.5 text-emerald-400" />
       </button>
 
-      <!-- Sandbox Shield Badge -->
-      <div class="hidden sm:flex items-center gap-1 text-slate-400 text-[11px] font-mono bg-slate-900/60 px-2 py-0.5 rounded border border-slate-800 mr-2">
-        <ShieldCheck class="w-3 h-3 text-emerald-400" />
-        <span>托盘守护中</span>
-      </div>
-
       <!-- Window Control Buttons (Minimize, Maximize, Close) -->
-      <div class="flex items-center -mr-2">
+      <div class="flex items-center -mr-2 ml-1">
         <!-- Minimize -->
         <button
           @click.stop="handleMinimize"
-          title="最小化"
+          :title="t('header.minimize')"
           class="w-9 h-8 flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition-colors cursor-pointer"
         >
           <Minus class="w-3.5 h-3.5" />
@@ -75,7 +79,7 @@
         <!-- Maximize / Restore -->
         <button
           @click.stop="handleToggleMaximize"
-          title="最大化 / 还原"
+          :title="t('header.maximize')"
           class="w-9 h-8 flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition-colors cursor-pointer"
         >
           <Square class="w-3.5 h-3.5" />
@@ -84,7 +88,7 @@
         <!-- Close to Tray -->
         <button
           @click.stop="handleClose"
-          title="最小化到系统托盘"
+          :title="t('header.closeWindow')"
           class="w-9 h-8 flex items-center justify-center text-slate-400 hover:text-white hover:bg-rose-600 transition-colors cursor-pointer"
         >
           <X class="w-4 h-4" />
@@ -95,13 +99,16 @@
 </template>
 
 <script setup lang="ts">
-import { Cpu, HardDrive, ArrowDownUp, Sparkles, ShieldCheck, Minus, Square, X, Sun, Moon, Monitor } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { Cpu, HardDrive, ArrowDownUp, Sparkles, Minus, Square, X, Sun, Moon, Monitor, Languages } from 'lucide-vue-next';
 import type { NavTab, SystemMetrics } from '@/types';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 import { useSettings } from '@/composables/useSettings';
+import { useI18n } from '@/composables/useI18n';
 
-const { settings, toggleTheme } = useSettings();
+const { settings, toggleTheme, setLanguage } = useSettings();
+const { t, locale } = useI18n();
 
 defineProps<{
   activeTab: NavTab;
@@ -112,11 +119,29 @@ defineEmits<{
   (e: 'quickCheck'): void;
 }>();
 
-const viewTitles: Record<NavTab, string> = {
-  chat: '智能排障对话 (AI Copilot)',
-  monitor: '实时系统性能看板',
-  toolbox: '快捷运维与急救工具箱',
-  settings: 'AI 模型与安全设置',
+const viewTitles = computed<Record<NavTab, string>>(() => ({
+  chat: `${t('nav.chat')} (AI Copilot)`,
+  monitor: t('nav.monitor'),
+  toolbox: t('nav.toolbox'),
+  settings: t('nav.settings'),
+}));
+
+const themeTooltip = computed(() => {
+  if (settings.theme === 'dark') return t('header.themeDark');
+  if (settings.theme === 'light') return t('header.themeLight');
+  return t('header.themeSystem');
+});
+
+const currentLangTooltip = computed(() => {
+  return locale.value === 'zh-CN' ? 'Switch to English (切换为英文)' : '切换为简体中文 (Switch to Chinese)';
+});
+
+const toggleLanguage = () => {
+  if (locale.value === 'zh-CN') {
+    setLanguage('en-US');
+  } else {
+    setLanguage('zh-CN');
+  }
 };
 
 // 拖拽窗口

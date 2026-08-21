@@ -30,7 +30,7 @@
         class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1"
       >
         <Check class="w-3 h-3" />
-        已优化完成
+        {{ t('chat.actionSuccess') }}
       </span>
     </div>
 
@@ -47,7 +47,7 @@
     <div class="flex items-center justify-between pt-2 border-t border-slate-800/60">
       <span class="text-[11px] text-slate-500 flex items-center gap-1">
         <Shield class="w-3 h-3 text-slate-400" />
-        点击即时执行，安全可控
+        {{ locale === 'zh-CN' ? '点击即时执行，安全可控' : 'Click to execute safely' }}
       </span>
 
       <button
@@ -72,7 +72,7 @@
         class="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 flex items-center gap-2 cursor-wait"
       >
         <Loader2 class="w-3.5 h-3.5 animate-spin text-blue-400" />
-        <span>正在执行修复...</span>
+        <span>{{ t('chat.actionExecuting') }}</span>
       </button>
 
       <button
@@ -81,7 +81,7 @@
         class="px-3 py-1 rounded-lg text-xs font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-800/40 flex items-center gap-1 cursor-default"
       >
         <Check class="w-3.5 h-3.5" />
-        <span>执行成功</span>
+        <span>{{ t('chat.actionSuccess') }}</span>
       </button>
     </div>
   </div>
@@ -90,6 +90,9 @@
 <script setup lang="ts">
 import { Play, Loader2, Check, Shield, Zap, Trash2, XCircle, Wifi, FastForward, Wrench } from 'lucide-vue-next';
 import type { ActionCardData } from '@/types';
+import { useI18n } from '@/composables/useI18n';
+
+const { t, locale } = useI18n();
 
 defineProps<{
   action: ActionCardData;
@@ -101,11 +104,17 @@ defineEmits<{
 
 const getIcon = (type: ActionCardData['type']) => {
   switch (type) {
-    case 'kill_process': return XCircle;
-    case 'clean_disk': return Trash2;
-    case 'fix_network': return Wifi;
-    case 'speedup_boot': return FastForward;
-    default: return Wrench;
+    case 'kill_process':
+      return XCircle;
+    case 'clean_disk':
+      return Trash2;
+    case 'fix_network':
+      return Wifi;
+    case 'speedup_boot':
+    case 'toggle_autostart':
+      return FastForward;
+    default:
+      return Wrench;
   }
 };
 </script>

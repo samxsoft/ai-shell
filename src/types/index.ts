@@ -203,6 +203,7 @@ export interface UserSettings {
   autoDiagnosticOnStartup: boolean;
   requireConfirmForDangerousActions: boolean;
   theme: 'dark' | 'light' | 'system';
+  language?: 'zh-CN' | 'en-US' | 'system';
 }
 
 export interface NetworkDiagnosisResult {

@@ -8,6 +8,7 @@ import type { ChatMessage, ActionCardData, ChatSession, PortOccupantInfo, Garbag
 
 
 import { useSettings } from './useSettings';
+import { useI18n } from './useI18n';
 import { runAgentDiagnosis } from '@/services/agentEngine';
 
 
@@ -83,26 +84,31 @@ export function useAgentChat(onExecuteActionCallback?: (action: ActionCardData) 
     { deep: true }
   );
 
-  const quickPrompts = [
-    { label: '为什么电脑突然很卡？', query: '为什么电脑这么卡？帮我全面检查一下。' },
-    { label: 'C 盘空间满了怎么清理？', query: 'C盘快满了，帮我看看哪些文件或日志可以安全清理。' },
-    { label: '网页打不开了/网络故障', query: '网页打不开了，网络好像不通，帮我诊断一下。' },
-    { label: '提示 8080 端口被占用', query: '8080 端口被占用了，帮我找出是哪个程序占用的并释放。' },
-  ];
+  const { t, locale } = useI18n();
+
+  const quickPrompts = computed(() => [
+    { label: t('chat.promptPort'), query: t('chat.promptPort') },
+    { label: t('chat.promptClean'), query: t('chat.promptClean') },
+    { label: t('chat.promptNetwork'), query: t('chat.promptNetwork') },
+    { label: t('chat.promptDocker'), query: t('chat.promptDocker') },
+    { label: t('chat.promptAutostart'), query: t('chat.promptAutostart') },
+  ]);
 
   // 新建会话
   const createNewSession = () => {
     const newId = `session-${Date.now()}`;
     const newSession: ChatSession = {
       id: newId,
-      title: '新排障对话',
+      title: locale.value === 'zh-CN' ? '新排障会话' : 'New AI Session',
       createdAt: new Date().toLocaleString(),
       updatedAt: new Date().toLocaleString(),
       messages: [
         {
           id: `welcome-${Date.now()}`,
           sender: 'ai',
-          content: '已为您开启新的排障对话。请告诉我您遇到的系统问题或需求：',
+          content: locale.value === 'zh-CN'
+            ? '已为您开启新的排障对话。请告诉我您遇到的系统问题或需求：'
+            : 'Started a new troubleshooting session. Please tell me about your system issue or question:',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           actionCards: [],
           diagnostics: [],

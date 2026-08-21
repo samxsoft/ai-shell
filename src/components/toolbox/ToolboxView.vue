@@ -5,21 +5,21 @@
       <div>
         <h1 class="text-xl font-bold text-slate-100 flex items-center gap-2">
           <Wrench class="w-5 h-5 text-blue-400" />
-          快捷运维与急救工具箱
+          {{ t('toolbox.title') }}
         </h1>
         <p class="text-xs text-slate-400 mt-1">
-          已接入底层系统探测与安全操作指令，支持开箱即用的硬核工具与 AI 自动化排障。
+          {{ t('toolbox.subtitle') }}
         </p>
       </div>
 
       <!-- Quick Action Badges -->
       <div class="flex items-center gap-2">
         <span class="text-xs font-mono px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400">
-          {{ tools.length }} 项内置工具
+          {{ locale === 'zh-CN' ? `${tools.length} 项内置工具` : `${tools.length} Native Tools` }}
         </span>
         <span class="text-xs font-mono px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-1">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          原生探针就绪
+          {{ locale === 'zh-CN' ? '原生探针就绪' : 'Engine Ready' }}
         </span>
       </div>
     </div>
@@ -1559,8 +1559,9 @@ import {
 } from 'lucide-vue-next';
 import { invoke } from '@tauri-apps/api/core';
 import type { AutostartEntry, DnsPingResult, PortOccupantInfo, GarbageScanResult, LargeFileInfo, ProcessItem, DockerOverview, NetworkDiagnosisResult } from '@/types';
+import { useI18n } from '@/composables/useI18n';
 
-
+const { t, locale } = useI18n();
 
 defineEmits<{
   (e: 'selectTool', prompt: string): void;
@@ -2204,108 +2205,102 @@ const handleFlushDns = async () => {
 };
 
 
-const tools = [
+const tools = computed(() => [
   {
     id: 'port',
-    name: '真实端口冲突排查器',
-    category: '网络急救',
-    description: '输入指定端口（如 8080、3000、3306），秒级定位占用该端口的真实进程与 PID，支持一键强制释放。',
+    name: t('toolbox.tools.port.name'),
+    category: t('toolbox.catNetwork'),
+    description: t('toolbox.tools.port.desc'),
     icon: Radio,
     colorClass: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400',
     badgeClass: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300',
-    statusText: '精准排查 & 全量扫描',
-    prompt: '请帮我全面排查一下当前系统有哪些网络端口正在被占用或存在冲突？并给出诊断分析。',
+    statusText: t('toolbox.tools.port.badge'),
+    prompt: locale.value === 'zh-CN' ? '请帮我全面排查一下当前系统有哪些网络端口正在被占用或存在冲突？并给出诊断分析。' : 'Please inspect all occupied network ports and detect any conflicts.',
     hasDirectModal: true,
   },
-
   {
     id: 'autostart',
-    name: '开机自启动项深度管理',
-    category: '开机优化',
-    description: '真实扫描 Windows 注册表 Run 项与启动目录，可视化管理自启软件，一键禁用流氓软件开机拖慢系统。',
+    name: t('toolbox.tools.autostart.name'),
+    category: t('toolbox.catSpeed'),
+    description: t('toolbox.tools.autostart.desc'),
     icon: Zap,
     colorClass: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
     badgeClass: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
-    statusText: '注册表级别安全开关',
-    prompt: '帮我检查一下当前系统有哪些开机自启动项，分析哪些是可以安全禁用的。',
+    statusText: t('toolbox.tools.autostart.badge'),
+    prompt: locale.value === 'zh-CN' ? '帮我检查一下当前系统有哪些开机自启动项，分析哪些是可以安全禁用的。' : 'Check all startup items and recommend which can be safely disabled.',
     hasDirectModal: true,
   },
   {
     id: 'dns',
-    name: '网络连通与 DNS 测速优选',
-    category: '网络提速',
-    description: '真实测试阿里、腾讯、百度与 Cloudflare 等公共 DNS 的实时毫秒级延迟，一键智能切换到最优 DNS。',
+    name: t('toolbox.tools.dns.name'),
+    category: t('toolbox.catNetwork'),
+    description: t('toolbox.tools.dns.desc'),
     icon: Globe,
     colorClass: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
     badgeClass: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
-    statusText: '毫秒级测速 & 一键切换',
-    prompt: '网络有点慢或者网页经常打不开，帮我测试一下当前网络延迟并刷新 DNS 解析缓存。',
+    statusText: t('toolbox.tools.dns.badge'),
+    prompt: locale.value === 'zh-CN' ? '网络有点慢或者网页经常打不开，帮我测试一下当前网络延迟并刷新 DNS 解析缓存。' : 'Benchmark DNS latency and switch to the fastest DNS server.',
     hasDirectModal: true,
   },
   {
     id: 'disk',
-    name: 'C 盘深度垃圾与更新缓存清理',
-    category: '存储空间',
-    description: '安全扫描系统临时文件、Windows Update 安装缓存和应用崩溃转储日志，安全释放可观的系统盘空间。',
+    name: locale === 'zh-CN' ? 'C 盘深度垃圾与更新缓存清理' : 'Disk Junk & Update Cache Cleaner',
+    category: t('toolbox.catDisk'),
+    description: locale === 'zh-CN' ? '安全扫描系统临时文件、Windows Update 安装缓存和应用崩溃转储日志，安全释放可观的系统盘空间。' : 'Safely scan temporary junk, update caches, and crash dumps to reclaim disk space.',
     icon: Trash2,
     colorClass: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
     badgeClass: 'bg-rose-500/10 border-rose-500/20 text-rose-300',
-    statusText: '支持一键安全瘦身',
-    prompt: 'C 盘空间不足，帮我扫描一下系统有哪些临时垃圾和更新缓存可以安全清理。',
+    statusText: locale === 'zh-CN' ? '一键安全瘦身' : 'Clean',
+    prompt: locale.value === 'zh-CN' ? 'C 盘空间不足，帮我扫描一下系统有哪些临时垃圾和更新缓存可以安全清理。' : 'Scan system disk for junk files and reclaim storage space.',
     hasDirectModal: true,
   },
-
   {
     id: 'large_files',
-    name: '磁盘大文件雷达与占用分析',
-    category: '空间透视',
-    description: '多线程秒级排查磁盘中 >1GB 的巨型文件、隐藏虚拟磁盘镜像与下载残留，揪出吃盘真凶。',
+    name: t('toolbox.tools.largeFiles.name'),
+    category: t('toolbox.catDisk'),
+    description: t('toolbox.tools.largeFiles.desc'),
     icon: Database,
     colorClass: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
     badgeClass: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300',
-    statusText: '巨型文件秒级雷达',
-    prompt: '帮我排查一下电脑磁盘里有哪些占用超过 1GB 的大文件和隐藏镜像。',
+    statusText: t('toolbox.tools.largeFiles.badge'),
+    prompt: locale.value === 'zh-CN' ? '帮我排查一下电脑磁盘里有哪些占用超过 1GB 的大文件和隐藏镜像。' : 'Locate huge files >500MB hogging disk drives.',
     hasDirectModal: true,
   },
-
   {
     id: 'process_killer',
-    name: '活跃进程急速降温与查杀',
-    category: '性能调优',
-    description: '全盘扫描 CPU 与内存排名前列的活跃进程，自动识别死锁、卡死无响应的后台流氓应用并安全查杀。',
+    name: t('toolbox.tools.processKiller.name'),
+    category: t('toolbox.catSpeed'),
+    description: t('toolbox.tools.processKiller.desc'),
     icon: Cpu,
     colorClass: 'bg-violet-500/10 border-violet-500/30 text-violet-400',
     badgeClass: 'bg-violet-500/10 border-violet-500/20 text-violet-300',
-    statusText: '智能白名单保护',
-    prompt: '帮我查看当前系统中 CPU 和内存占用最高的异常进程，并推荐可以结束的项。',
+    statusText: t('toolbox.tools.processKiller.badge'),
+    prompt: locale.value === 'zh-CN' ? '帮我查看当前系统中 CPU 和内存占用最高的异常进程，并推荐可以结束的项。' : 'Find heavy or unresponsive processes and safely terminate them.',
     hasDirectModal: true,
   },
-
   {
     id: 'docker',
-    name: 'Docker 容器与镜像专项体检',
-    category: '开发运维',
-    description: '自动分析本机未运行容器、悬挂镜像 (Dangling) 与无主存储卷，一键清理开发构建残留空间。',
+    name: t('toolbox.tools.docker.name'),
+    category: 'DevOps',
+    description: t('toolbox.tools.docker.desc'),
     icon: Layers,
     colorClass: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
     badgeClass: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
-    statusText: '容器与构建缓存排查',
-    prompt: '帮我检查一下本机 Docker 环境，看看有哪些停止的容器和无用的悬挂镜像可以清理。',
+    statusText: t('toolbox.tools.docker.badge'),
+    prompt: locale.value === 'zh-CN' ? '帮我检查一下本机 Docker 环境，看看有哪些停止的容器和无用的悬挂镜像可以清理。' : 'Inspect Docker environment and clean stopped containers & dangling images.',
     hasDirectModal: true,
   },
-
   {
     id: 'network_repair',
-    name: 'DNS 缓存强制刷新与网络急救',
-    category: '网络急救',
-    description: '一键刷新系统本地 DNS 解析缓存并重置 TCP/IP 网络栈，快速解决连着 WiFi 却打不开网页等异常故障。',
+    name: t('toolbox.tools.network.name'),
+    category: t('toolbox.catNetwork'),
+    description: t('toolbox.tools.network.desc'),
     icon: Wifi,
     colorClass: 'bg-teal-500/10 border-teal-500/30 text-teal-400',
     badgeClass: 'bg-teal-500/10 border-teal-500/20 text-teal-300',
-    statusText: '一键网络栈复位',
-    prompt: '网页打不开了，网络连接异常，帮我执行网络急救与 DNS 刷新。',
+    statusText: t('toolbox.tools.network.badge'),
+    prompt: locale.value === 'zh-CN' ? '网页打不开了，网络连接异常，帮我执行网络急救与 DNS 刷新。' : 'Diagnose network health and perform full-link reset & flush.',
     hasDirectModal: true,
   },
-
-];
+]);
 </script>

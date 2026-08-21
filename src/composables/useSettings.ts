@@ -1,5 +1,6 @@
 import { reactive, watch } from 'vue';
 import type { UserSettings } from '@/types';
+import { useI18n } from '@/composables/useI18n';
 
 const STORAGE_KEY = 'ai_shell_user_settings_v1';
 
@@ -12,6 +13,7 @@ const defaultSettings: UserSettings = {
   autoDiagnosticOnStartup: false,
   requireConfirmForDangerousActions: true,
   theme: 'dark',
+  language: 'system',
 };
 
 const providerDefaults: Record<UserSettings['aiProvider'], { endpoint: string; model: string }> = {
@@ -68,11 +70,12 @@ if (typeof window !== 'undefined') {
       applyTheme('system');
     }
   });
-  // 初始化应用主题
+  // 初始化应用主题与语言
   applyTheme(settings.theme || 'dark');
+  useI18n().setLanguage(settings.language || 'system');
 }
 
-// 自动保存与主题同步
+// 自动保存与主题/语言同步
 watch(
   settings,
   (val) => {
@@ -82,6 +85,7 @@ watch(
       console.warn('保存配置到 localStorage 失败:', e);
     }
     applyTheme(val.theme || 'dark');
+    useI18n().setLanguage(val.language || 'system');
   },
   { deep: true }
 );
@@ -104,6 +108,10 @@ export function useSettings() {
     settings.theme = theme;
   };
 
+  const setLanguage = (lang: NonNullable<UserSettings['language']>) => {
+    settings.language = lang;
+  };
+
   const toggleTheme = () => {
     if (settings.theme === 'dark') {
       settings.theme = 'light';
@@ -117,6 +125,7 @@ export function useSettings() {
     switchProvider,
     hasConfiguredApiKey,
     setTheme,
+    setLanguage,
     toggleTheme,
     applyTheme,
   };

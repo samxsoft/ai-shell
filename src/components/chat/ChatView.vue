@@ -9,10 +9,10 @@
           @click="showSessionDrawer = !showSessionDrawer"
           class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer"
           :class="showSessionDrawer ? 'bg-blue-600 text-white' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white'"
-          title="展开/收起历史会话列表"
+          :title="locale === 'zh-CN' ? '展开/收起历史会话列表' : 'Toggle Session History'"
         >
           <History class="w-3.5 h-3.5" />
-          <span>历史会话 ({{ sessions.length }})</span>
+          <span>{{ t('chat.sessionList') }} ({{ sessions.length }})</span>
           <ChevronDown class="w-3 h-3 transition-transform" :class="{ 'rotate-180': showSessionDrawer }" />
         </button>
 
@@ -31,10 +31,10 @@
         <button
           @click="handleOpenExportModal"
           class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer border border-slate-700/50"
-          title="预览并导出当前排障诊断报告"
+          :title="locale === 'zh-CN' ? '预览并导出当前排障诊断报告' : 'Preview and Export Diagnostic Report'"
         >
           <Download class="w-3.5 h-3.5 text-indigo-400" />
-          <span>导出排障报告</span>
+          <span>{{ t('common.export') }}</span>
         </button>
 
         <!-- New Chat Button -->
@@ -43,7 +43,7 @@
           class="flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
         >
           <Plus class="w-3.5 h-3.5" />
-          <span>新建对话</span>
+          <span>{{ t('chat.newChat') }}</span>
         </button>
       </div>
     </div>
@@ -241,6 +241,9 @@ import { invoke } from '@tauri-apps/api/core';
 import MessageItem from './MessageItem.vue';
 import ChatInput from './ChatInput.vue';
 import type { ChatMessage, ActionCardData, ChatSession } from '@/types';
+import { useI18n } from '@/composables/useI18n';
+
+const { t, locale } = useI18n();
 
 const props = defineProps<{
   messages: ChatMessage[];
@@ -271,7 +274,7 @@ const scrollContainer = ref<HTMLElement | null>(null);
 
 const currentSessionTitle = computed(() => {
   const s = props.sessions.find((item) => item.id === props.currentSessionId);
-  return s?.title || '排障对话';
+  return s?.title || (locale.value === 'zh-CN' ? '排障会话' : 'AI Session');
 });
 
 function generateReportMarkdown(session: ChatSession): string {

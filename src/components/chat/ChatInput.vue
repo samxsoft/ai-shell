@@ -4,7 +4,7 @@
     <div class="flex items-center gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar">
       <span class="text-xs text-slate-500 flex items-center gap-1 flex-shrink-0">
         <Sparkles class="w-3.5 h-3.5 text-blue-400" />
-        快捷提问:
+        {{ t('chat.quickPromptsTitle') }}:
       </span>
       <button
         v-for="prompt in quickPrompts"
@@ -24,7 +24,7 @@
         @keydown.enter="handleSend"
         type="text"
         :disabled="isGenerating"
-        placeholder="向 AI 系统管家提问，例如：为什么电脑这么卡？C盘怎么清理？网络连不上..."
+        :placeholder="t('chat.inputPlaceholder')"
         class="w-full bg-slate-900/90 border border-slate-800 focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20 text-slate-200 text-sm rounded-xl pl-4 pr-24 py-3 placeholder:text-slate-500 outline-none transition-all"
       />
 
@@ -36,14 +36,14 @@
         >
           <Loader2 v-if="isGenerating" class="w-3.5 h-3.5 animate-spin" />
           <Send v-else class="w-3.5 h-3.5" />
-          <span>{{ isGenerating ? '诊断中' : '发送' }}</span>
+          <span>{{ isGenerating ? t('chat.actionExecuting') : t('chat.send') }}</span>
         </button>
       </div>
     </div>
 
     <div class="flex items-center justify-between text-[11px] text-slate-500 mt-2 px-1">
-      <span>支持自然语言诊断、自动探针调用与一键可控修复</span>
-      <span>按 <kbd class="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-400 font-mono text-[10px]">Enter</kbd> 发送</span>
+      <span>{{ locale === 'zh-CN' ? '支持自然语言诊断、自动探针调用与一键可控修复' : 'Natural language diagnostics with automated probing & controlled execution' }}</span>
+      <span>{{ locale === 'zh-CN' ? '按 ' : 'Press ' }}<kbd class="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-400 font-mono text-[10px]">Enter</kbd>{{ locale === 'zh-CN' ? ' 发送' : ' to send' }}</span>
     </div>
   </div>
 </template>
@@ -51,6 +51,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Send, Loader2, Sparkles } from 'lucide-vue-next';
+import { useI18n } from '@/composables/useI18n';
+
+const { t, locale } = useI18n();
 
 const props = defineProps<{
   quickPrompts: { label: string; query: string }[];
@@ -70,3 +73,4 @@ const handleSend = () => {
   inputQuery.value = '';
 };
 </script>
+
