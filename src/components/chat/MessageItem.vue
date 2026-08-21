@@ -148,7 +148,7 @@ import { marked } from 'marked';
 import ActionCard from './ActionCard.vue';
 import type { ChatMessage, ActionCardData } from '@/types';
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 defineProps<{
   message: ChatMessage;

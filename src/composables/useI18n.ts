@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { messages, type LocaleType, type AppLanguage, type TranslationSchema } from '@/locales';
+import { messages, type LocaleType, type AppLanguage } from '@/locales';
 
 const currentLocale = ref<LocaleType>('zh-CN');
 const languageSetting = ref<AppLanguage>('system');
@@ -40,7 +40,7 @@ export function useI18n() {
     currentLocale.value = resolveLocale(lang);
   };
 
-  const t = (key: string, ...args: (string | number)[]): string => {
+  const t = (key: string, ...args: (string | number | undefined | null)[]): string => {
     const currentDict = messages[currentLocale.value] || messages['zh-CN'];
     let text = getNestedValue(currentDict, key);
 
@@ -57,7 +57,11 @@ export function useI18n() {
     if (args.length > 0) {
       return text.replace(/\{(\d+)\}/g, (match, index) => {
         const argIndex = parseInt(index, 10);
-        return argIndex < args.length ? String(args[argIndex]) : match;
+        if (argIndex < args.length) {
+          const val = args[argIndex];
+          return val !== undefined && val !== null ? String(val) : '';
+        }
+        return match;
       });
     }
 

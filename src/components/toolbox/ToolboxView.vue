@@ -15,11 +15,11 @@
       <!-- Quick Action Badges -->
       <div class="flex items-center gap-2">
         <span class="text-xs font-mono px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400">
-          {{ locale === 'zh-CN' ? `${tools.length} 项内置工具` : `${tools.length} Native Tools` }}
+          {{ t('toolbox.nativeToolsCount', tools.length) }}
         </span>
         <span class="text-xs font-mono px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-1">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          {{ locale === 'zh-CN' ? '原生探针就绪' : 'Engine Ready' }}
+          {{ t('toolbox.engineReady') }}
         </span>
       </div>
     </div>
@@ -60,7 +60,7 @@
               class="px-2 py-0.5 text-[11px] font-medium text-blue-400 hover:text-white bg-blue-500/10 hover:bg-blue-600 rounded-lg border border-blue-500/20 transition-all cursor-pointer flex items-center gap-1"
             >
               <Sliders class="w-3 h-3" />
-              <span>打开</span>
+              <span>{{ t('toolbox.openBtn') }}</span>
             </button>
 
             <!-- 唤起 AI 智能体排障 -->
@@ -69,7 +69,7 @@
               class="px-2 py-0.5 text-[11px] font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all cursor-pointer flex items-center gap-1"
             >
               <Bot class="w-3 h-3 text-blue-400" />
-              <span>AI</span>
+              <span>{{ t('toolbox.aiBtn') }}</span>
             </button>
           </div>
         </div>
@@ -87,8 +87,8 @@
           <div class="flex items-center gap-2">
             <Radio class="w-5 h-5 text-indigo-400" />
             <div>
-              <h3 class="text-sm font-semibold text-slate-100">真实端口冲突探测与一键释放</h3>
-              <p class="text-[11px] text-slate-400">底层调用 netstat/lsof 探测活跃监听端口，定位 PID、内存及路径，支持安全强制释放</p>
+              <h3 class="text-sm font-semibold text-slate-100">{{ t('toolbox.modals.port.title') }}</h3>
+              <p class="text-[11px] text-slate-400">{{ t('toolbox.modals.port.subtitle') }}</p>
             </div>
           </div>
           <button @click="activeModal = null" class="text-slate-400 hover:text-white cursor-pointer">
@@ -104,7 +104,7 @@
             :class="portTab === 'single' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'"
           >
             <Search class="w-3.5 h-3.5" />
-            <span>指定端口精准排查</span>
+            <span>{{ t('toolbox.modals.port.tabSingle') }}</span>
           </button>
           <button
             @click="portTab = 'all'; handleScanAllPorts()"
@@ -112,20 +112,20 @@
             :class="portTab === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-800/60 text-slate-400 hover:text-slate-200'"
           >
             <Layers class="w-3.5 h-3.5" />
-            <span>全系统活跃监听端口总览</span>
+            <span>{{ t('toolbox.modals.port.tabAll') }}</span>
           </button>
         </div>
 
         <!-- Tab 1: 单端口排查 -->
         <div v-if="portTab === 'single'" class="space-y-3">
-          <label class="text-xs text-slate-400">输入需要排查的端口号 (1 - 65535)：</label>
+          <label class="text-xs text-slate-400">{{ t('toolbox.modals.port.inputLabel') }}</label>
           <div class="flex items-center gap-2">
             <input
               v-model.number="inputPort"
               type="number"
               min="1"
               max="65535"
-              placeholder="如 8080, 3000, 3306, 1420"
+              :placeholder="t('toolbox.modals.port.inputPlaceholder')"
               class="flex-1 px-3 py-2 text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500"
               @keyup.enter="handleCheckPort"
             />
@@ -135,13 +135,13 @@
               class="px-4 py-2 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
             >
               <Search class="w-3.5 h-3.5" :class="{ 'animate-spin': isPortChecking }" />
-              <span>{{ isPortChecking ? '探测中...' : '立即排查' }}</span>
+              <span>{{ isPortChecking ? t('toolbox.modals.port.inspecting') : t('toolbox.modals.port.inspectBtn') }}</span>
             </button>
           </div>
 
           <!-- Quick port chips -->
           <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-[11px] text-slate-500">常用端口：</span>
+            <span class="text-[11px] text-slate-500">{{ t('toolbox.modals.port.commonPorts') }}</span>
             <button
               v-for="p in [8080, 3000, 3306, 80, 1420, 5432, 27017, 6379]"
               :key="p"
@@ -163,21 +163,21 @@
                 <div class="flex items-center gap-2">
                   <span class="w-2.5 h-2.5 rounded-full" :class="portResult.isOccupied ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'"></span>
                   <span class="text-xs font-bold text-slate-200">
-                    端口 :{{ portResult.port }} - {{ portResult.status }}
+                    {{ t('toolbox.modals.port.portStatus', portResult.port, portResult.status) }}
                   </span>
                 </div>
                 
                 <div v-if="portResult.isOccupied" class="space-y-1 text-xs font-mono text-slate-300">
-                  <p><span class="text-slate-500">占用进程：</span><strong class="text-amber-300">{{ portResult.processName }}</strong> (PID: {{ portResult.pid }})</p>
-                  <p v-if="portResult.memoryMB"><span class="text-slate-500">内存占用：</span>{{ portResult.memoryMB }} MB</p>
-                  <p v-if="portResult.cpuPercent !== undefined"><span class="text-slate-500">CPU 占用：</span>{{ portResult.cpuPercent }}%</p>
-                  <p><span class="text-slate-500">绑定协议与地址：</span>{{ portResult.protocol }} {{ portResult.localAddress }}</p>
+                  <p><span class="text-slate-500">{{ t('toolbox.modals.port.occupiedBy') }}</span><strong class="text-amber-300">{{ portResult.processName }}</strong> (PID: {{ portResult.pid }})</p>
+                  <p v-if="portResult.memoryMB"><span class="text-slate-500">{{ t('toolbox.modals.port.memoryUsage') }}</span>{{ portResult.memoryMB }} MB</p>
+                  <p v-if="portResult.cpuPercent !== undefined"><span class="text-slate-500">{{ t('toolbox.modals.port.cpuUsage') }}</span>{{ portResult.cpuPercent }}%</p>
+                  <p><span class="text-slate-500">{{ t('toolbox.modals.port.protocolAddress') }}</span>{{ portResult.protocol }} {{ portResult.localAddress }}</p>
                   <p v-if="portResult.exePath" class="truncate" :title="portResult.exePath">
-                    <span class="text-slate-500">文件路径：</span><span class="text-slate-400">{{ portResult.exePath }}</span>
+                    <span class="text-slate-500">{{ t('toolbox.modals.port.exePath') }}</span><span class="text-slate-400">{{ portResult.exePath }}</span>
                   </p>
                 </div>
                 <div v-else class="text-xs text-emerald-400">
-                  ✅ 该端口当前完全空闲，没有任何应用程序在监听，可供服务正常绑定！
+                  {{ t('toolbox.modals.port.freeStatusMsg') }}
                 </div>
               </div>
 
@@ -189,7 +189,7 @@
                 class="px-3.5 py-2 text-xs font-medium bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-lg shadow-rose-600/20 flex-shrink-0"
               >
                 <Trash2 class="w-3.5 h-3.5" />
-                <span>{{ isPortKilling ? '释放中...' : '强制释放端口' }}</span>
+                <span>{{ isPortKilling ? t('toolbox.modals.port.releasing') : t('toolbox.modals.port.forceRelease') }}</span>
               </button>
             </div>
           </div>
@@ -203,7 +203,7 @@
         <div v-else class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[50vh]">
           <div v-if="isScanningAll" class="text-center py-10 text-xs text-slate-400 flex items-center justify-center gap-2">
             <Loader2 class="w-4 h-4 animate-spin text-indigo-400" />
-            <span>正在全量扫描系统网络栈活跃监听端口...</span>
+            <span>{{ t('toolbox.modals.port.scanningAll') }}</span>
           </div>
 
           <div v-else-if="allListeningPorts.length > 0" class="space-y-1.5">
@@ -221,7 +221,7 @@
                     <span class="text-xs font-semibold text-slate-200 truncate">{{ item.processName }}</span>
                     <span v-if="item.pid" class="text-[10px] font-mono text-slate-500">PID: {{ item.pid }}</span>
                   </div>
-                  <p class="text-[10px] font-mono text-slate-500 truncate mt-0.5">{{ item.localAddress }} • {{ item.memoryMB ? `${item.memoryMB} MB` : '系统' }}</p>
+                  <p class="text-[10px] font-mono text-slate-500 truncate mt-0.5">{{ item.localAddress }} • {{ item.memoryMB ? `${item.memoryMB} MB` : t('toolbox.modals.port.systemMem') }}</p>
                 </div>
               </div>
 
@@ -231,30 +231,30 @@
                 @click="handleKillPortOccupant(item.pid)"
                 :disabled="isPortKilling"
                 class="px-2.5 py-1 text-xs font-medium text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-600 rounded-lg border border-rose-500/20 transition-all cursor-pointer flex items-center gap-1"
-                title="结束占用该端口的进程"
+                :title="t('toolbox.modals.port.releaseTooltip')"
               >
                 <Trash2 class="w-3 h-3" />
-                <span>释放</span>
+                <span>{{ t('toolbox.modals.port.releaseBtn') }}</span>
               </button>
             </div>
           </div>
 
           <div v-else class="text-center py-10 text-xs text-slate-500">
-            暂未探测到活跃监听端口
+            {{ t('toolbox.modals.port.emptyAll') }}
           </div>
         </div>
 
         <!-- Footer -->
         <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-xs text-slate-500">
-          <span v-if="portTab === 'all'">共探测到 {{ allListeningPorts.length }} 个活跃监听端口</span>
-          <span v-else>精准匹配 IPv4 & IPv6 监听服务</span>
+          <span v-if="portTab === 'all'">{{ t('toolbox.modals.port.footerAllCount', allListeningPorts.length) }}</span>
+          <span v-else>{{ t('toolbox.modals.port.footerSingle') }}</span>
           <button
             v-if="portTab === 'all'"
             @click="handleScanAllPorts"
             class="text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
           >
             <RotateCw class="w-3 h-3" />
-            <span>重新扫描</span>
+            <span>{{ t('toolbox.modals.port.rescan') }}</span>
           </button>
         </div>
       </div>
@@ -271,8 +271,8 @@
           <div class="flex items-center gap-2">
             <Zap class="w-5 h-5 text-amber-400" />
             <div>
-              <h3 class="text-sm font-semibold text-slate-100">Windows 真实开机自启动项深度管理</h3>
-              <p class="text-[11px] text-slate-400">底层读取 HKCU/HKLM 注册表与启动目录，支持安全禁用/恢复与开机耗时优化</p>
+              <h3 class="text-sm font-semibold text-slate-100">{{ t('toolbox.modals.autostart.title') }}</h3>
+              <p class="text-[11px] text-slate-400">{{ t('toolbox.modals.autostart.subtitle') }}</p>
             </div>
           </div>
           <button @click="activeModal = null" class="text-slate-400 hover:text-white cursor-pointer">
@@ -289,28 +289,28 @@
               class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
               :class="autostartFilter === 'all' ? 'bg-amber-500/20 text-amber-300 font-medium' : 'text-slate-400 hover:text-slate-200'"
             >
-              全部 ({{ autostartList.length }})
+              {{ t('toolbox.modals.autostart.filterAll', autostartList.length) }}
             </button>
             <button
               @click="autostartFilter = 'enabled'"
               class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
               :class="autostartFilter === 'enabled' ? 'bg-emerald-500/20 text-emerald-300 font-medium' : 'text-slate-400 hover:text-slate-200'"
             >
-              已启用 ({{ enabledCount }})
+              {{ t('toolbox.modals.autostart.filterEnabled', enabledCount) }}
             </button>
             <button
               @click="autostartFilter = 'disabled'"
               class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
               :class="autostartFilter === 'disabled' ? 'bg-slate-700 text-slate-200 font-medium' : 'text-slate-400 hover:text-slate-200'"
             >
-              已禁用 ({{ disabledCount }})
+              {{ t('toolbox.modals.autostart.filterDisabled', disabledCount) }}
             </button>
             <button
               @click="autostartFilter = 'recommended'"
               class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
               :class="autostartFilter === 'recommended' ? 'bg-indigo-500/20 text-indigo-300 font-medium' : 'text-slate-400 hover:text-slate-200'"
             >
-              推荐优化 ({{ recommendedCount }})
+              {{ t('toolbox.modals.autostart.filterRecommended', recommendedCount) }}
             </button>
           </div>
 
@@ -320,7 +320,7 @@
             <input
               v-model="autostartSearch"
               type="text"
-              placeholder="搜索自启动项名称或路径..."
+              :placeholder="t('toolbox.modals.autostart.searchPlaceholder')"
               class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -330,7 +330,7 @@
         <div class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[50vh]">
           <div v-if="isAutostartLoading" class="text-center py-10 text-xs text-slate-400 flex items-center justify-center gap-2">
             <Loader2 class="w-4 h-4 animate-spin text-amber-400" />
-            <span>正在深入扫描注册表与系统启动目录...</span>
+            <span>{{ t('toolbox.modals.autostart.scanning') }}</span>
           </div>
 
           <div
@@ -352,7 +352,7 @@
                   v-if="item.safeToDisable"
                   class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/10 border border-indigo-500/30 text-indigo-300"
                 >
-                  ⚡ 建议安全禁用
+                  {{ t('toolbox.modals.autostart.safeToDisableTag') }}
                 </span>
               </div>
               <p class="text-[11px] font-mono text-slate-500 truncate" :title="item.command">
@@ -367,25 +367,25 @@
               :class="item.enabled ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-rose-500/15 hover:text-rose-300 hover:border-rose-500/30' : 'bg-slate-800 text-slate-400 hover:bg-emerald-500/15 hover:text-emerald-300'"
             >
               <span class="w-1.5 h-1.5 rounded-full" :class="item.enabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'"></span>
-              <span>{{ item.enabled ? '已启用 (点击禁用)' : '已禁用 (点击恢复)' }}</span>
+              <span>{{ item.enabled ? t('toolbox.modals.autostart.btnEnabled') : t('toolbox.modals.autostart.btnDisabled') }}</span>
             </button>
           </div>
 
           <div v-else class="text-center py-10 text-xs text-slate-500">
-            暂无匹配的开机自启动项
+            {{ t('toolbox.modals.autostart.empty') }}
           </div>
         </div>
 
         <!-- Footer -->
         <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-xs text-slate-500">
           <div class="flex items-center gap-3">
-            <span>共 {{ autostartList.length }} 项 (已启用 {{ enabledCount }} 项)</span>
+            <span>{{ t('toolbox.modals.autostart.footerCount', autostartList.length, enabledCount) }}</span>
             <button
               v-if="recommendedCount > 0"
               @click="handleDisableAllRecommended"
               class="text-indigo-400 hover:underline font-medium cursor-pointer"
             >
-              一键禁用所有推荐优化项 ({{ recommendedCount }})
+              {{ t('toolbox.modals.autostart.footerDisableRecommended', recommendedCount) }}
             </button>
           </div>
           <button
@@ -393,7 +393,7 @@
             class="text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
           >
             <RotateCw class="w-3 h-3" />
-            <span>重新扫描</span>
+            <span>{{ t('toolbox.modals.autostart.rescan') }}</span>
           </button>
         </div>
       </div>
@@ -411,8 +411,8 @@
           <div class="flex items-center gap-2">
             <Globe class="w-5 h-5 text-emerald-400" />
             <div>
-              <h3 class="text-sm font-semibold text-slate-100">真实网络连通性与 DNS 测速优选</h3>
-              <p class="text-[11px] text-slate-400">多线程并发探测国内骨干与全球公共 DNS 服务器往返延迟，支持一键切换与 DHCP 还原</p>
+              <h3 class="text-sm font-semibold text-slate-100">{{ t('toolbox.modals.dns.title') }}</h3>
+              <p class="text-[11px] text-slate-400">{{ t('toolbox.modals.dns.subtitle') }}</p>
             </div>
           </div>
           <button @click="activeModal = null" class="text-slate-400 hover:text-white cursor-pointer">
@@ -422,23 +422,23 @@
 
         <!-- Action Bar -->
         <div class="flex items-center justify-between gap-2 flex-wrap">
-          <span class="text-xs text-slate-400 font-mono">延迟排行榜 (按响应速度升序)</span>
+          <span class="text-xs text-slate-400 font-mono">{{ t('toolbox.modals.dns.latencyRanking') }}</span>
           <div class="flex items-center gap-2">
             <!-- 刷新 DNS 缓存 -->
             <button
               @click="handleFlushDns"
               class="px-2.5 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all cursor-pointer border border-slate-700/50"
-              title="清除本地 Windows 解析缓存"
+              :title="t('toolbox.modals.dns.flushDnsTooltip')"
             >
-              刷新解析缓存
+              {{ t('toolbox.modals.dns.flushDns') }}
             </button>
             <!-- 恢复 DHCP -->
             <button
               @click="handleResetDhcpDns"
               class="px-2.5 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all cursor-pointer border border-slate-700/50"
-              title="还原为路由器默认分配"
+              :title="t('toolbox.modals.dns.resetDhcpTooltip')"
             >
-              恢复自动获取 (DHCP)
+              {{ t('toolbox.modals.dns.resetDhcp') }}
             </button>
             <!-- 测速 -->
             <button
@@ -447,7 +447,7 @@
               class="px-3.5 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
             >
               <Activity class="w-3.5 h-3.5" :class="{ 'animate-spin': isDnsTesting }" />
-              <span>{{ isDnsTesting ? '并发测速中...' : '重新测速' }}</span>
+              <span>{{ isDnsTesting ? t('toolbox.modals.dns.testing') : t('toolbox.modals.dns.retest') }}</span>
             </button>
           </div>
         </div>
@@ -473,13 +473,13 @@
                     v-if="dns.isCurrent"
                     class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex-shrink-0"
                   >
-                    当前使用中
+                    {{ t('toolbox.modals.dns.activeTag') }}
                   </span>
                   <span
                     v-else-if="idx === 0"
                     class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 flex-shrink-0"
                   >
-                    ⚡ 最优推荐
+                    {{ t('toolbox.modals.dns.optimalTag') }}
                   </span>
                 </div>
                 <p class="text-[11px] font-mono text-slate-500 truncate mt-0.5">{{ dns.primaryIp }} • {{ dns.secondaryIp }}</p>
@@ -493,7 +493,7 @@
                   class="text-xs font-mono font-bold"
                   :class="dns.latencyMs ? (dns.latencyMs < 30 ? 'text-emerald-400' : dns.latencyMs < 80 ? 'text-blue-400' : 'text-amber-400') : 'text-slate-600'"
                 >
-                  {{ dns.latencyMs ? `${dns.latencyMs} ms` : '超时' }}
+                  {{ dns.latencyMs ? `${dns.latencyMs} ms` : t('toolbox.modals.dns.timeout') }}
                 </span>
               </div>
 
@@ -504,7 +504,7 @@
                 class="px-3 py-1.5 text-xs font-medium rounded-xl transition-all cursor-pointer"
                 :class="dns.isCurrent ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white border border-slate-700/60 hover:border-transparent'"
               >
-                {{ dns.isCurrent ? '已生效' : '设为当前 DNS' }}
+                {{ dns.isCurrent ? t('toolbox.modals.dns.applied') : t('toolbox.modals.dns.setAsCurrent') }}
               </button>
             </div>
           </div>
@@ -527,8 +527,8 @@
           <div class="flex items-center gap-2">
             <Trash2 class="w-5 h-5 text-rose-400" />
             <div>
-              <h3 class="text-sm font-semibold text-slate-100">C 盘深度垃圾与更新安装缓存清理</h3>
-              <p class="text-[11px] text-slate-400">底层安全扫描系统临时文件、Windows Update 安装包与崩溃日志，安全释放系统盘空间</p>
+              <h3 class="text-sm font-semibold text-slate-100">{{ t('toolbox.modals.disk.title') }}</h3>
+              <p class="text-[11px] text-slate-400">{{ t('toolbox.modals.disk.subtitle') }}</p>
             </div>
           </div>
           <button @click="activeModal = null" class="text-slate-400 hover:text-white cursor-pointer">
@@ -539,10 +539,10 @@
         <!-- Summary Banner (Fixed height and stable typography) -->
         <div class="p-4 my-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between gap-4 flex-shrink-0">
           <div>
-            <span class="text-xs text-slate-400">可安全释放空间总量</span>
+            <span class="text-xs text-slate-400">{{ t('toolbox.modals.disk.reclaimableTotal') }}</span>
             <div class="text-2xl font-bold font-mono text-rose-400 mt-0.5 flex items-center gap-2">
               <span>{{ garbageResult ? garbageResult.totalFormatted : '0.0 MB' }}</span>
-              <span v-if="isGarbageScanning" class="text-xs font-normal text-rose-400/80 animate-pulse font-sans">(扫描中...)</span>
+              <span v-if="isGarbageScanning" class="text-xs font-normal text-rose-400/80 animate-pulse font-sans">{{ t('toolbox.modals.disk.scanningLabel') }}</span>
             </div>
           </div>
           <div class="flex items-center gap-2">
@@ -552,7 +552,7 @@
               class="w-24 h-9 text-xs font-medium bg-slate-800 hover:bg-slate-700 disabled:opacity-75 text-slate-300 rounded-xl transition-colors cursor-pointer border border-slate-700/50 flex items-center justify-center gap-1.5 flex-shrink-0"
             >
               <RotateCw class="w-3.5 h-3.5 flex-shrink-0" :class="{ 'animate-spin': isGarbageScanning }" />
-              <span>{{ isGarbageScanning ? '扫描中' : '重新扫描' }}</span>
+              <span>{{ isGarbageScanning ? t('toolbox.modals.disk.scanningBtn') : t('toolbox.modals.disk.rescan') }}</span>
             </button>
           </div>
         </div>
@@ -562,7 +562,7 @@
           <!-- Initial loading placeholder (only on first cold start without data) -->
           <div v-if="isGarbageScanning && !garbageResult" class="h-full flex flex-col items-center justify-center py-10 text-xs text-slate-400 gap-2">
             <Loader2 class="w-5 h-5 animate-spin text-rose-400" />
-            <span>正在深度扫描 Windows Update 缓存与临时文件...</span>
+            <span>{{ t('toolbox.modals.disk.initialScanning') }}</span>
           </div>
 
           <!-- Items list (kept rock-solid without layout changes) -->
@@ -584,7 +584,7 @@
           </template>
 
           <div v-else class="h-full flex items-center justify-center py-10 text-xs text-slate-500">
-            ✅ C 盘非常干净，暂未发现可清理的遗留垃圾缓存
+            {{ t('toolbox.modals.disk.cleanEmpty') }}
           </div>
         </div>
 
@@ -596,7 +596,7 @@
         <!-- Footer Action -->
         <div class="border-t border-slate-800 pt-3 mt-3 flex items-center justify-between flex-shrink-0">
           <span class="text-xs text-slate-500 font-mono">
-            {{ garbageResult ? `共发现 ${garbageResult.items.length} 处缓存目录` : '' }}
+            {{ garbageResult ? t('toolbox.modals.disk.footerCount', garbageResult.items.length) : '' }}
           </span>
           <button
             @click="handleCleanGarbage"
@@ -604,7 +604,7 @@
             class="px-5 py-2 text-xs font-medium bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-lg shadow-rose-600/20"
           >
             <Trash2 class="w-3.5 h-3.5" :class="{ 'animate-spin': isGarbageCleaning }" />
-            <span>{{ isGarbageCleaning ? '正在深度清理中...' : `立即安全清理 (${garbageResult ? garbageResult.totalFormatted : '0.0 MB'})` }}</span>
+            <span>{{ isGarbageCleaning ? t('toolbox.modals.disk.cleaning') : t('toolbox.modals.disk.cleanNow', garbageResult ? garbageResult.totalFormatted : '0.0 MB') }}</span>
           </button>
         </div>
       </div>
@@ -621,8 +621,8 @@
           <div class="flex items-center gap-2">
             <Database class="w-5 h-5 text-cyan-400" />
             <div>
-              <h3 class="text-sm font-semibold text-slate-100">磁盘大文件雷达与占用深度透视</h3>
-              <p class="text-[11px] text-slate-400">多线程秒级排查隐藏虚拟磁盘、大体积镜像、音视频与安装包，支持资源管理器一键定位</p>
+              <h3 class="text-sm font-semibold text-slate-100">{{ t('toolbox.modals.largeFiles.title') }}</h3>
+              <p class="text-[11px] text-slate-400">{{ t('toolbox.modals.largeFiles.subtitle') }}</p>
             </div>
           </div>
           <button @click="activeModal = null" class="text-slate-400 hover:text-white cursor-pointer">
@@ -640,28 +640,28 @@
                 class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
                 :class="largeFileFilter === 'all' ? 'bg-cyan-500/20 text-cyan-300 font-medium' : 'text-slate-400 hover:text-slate-200'"
               >
-                全部 ({{ largeFileList.length }})
+                {{ t('toolbox.modals.largeFiles.filterAll', largeFileList.length) }}
               </button>
               <button
                 @click="largeFileFilter = 'virtual_disk'"
                 class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
                 :class="largeFileFilter === 'virtual_disk' ? 'bg-indigo-500/20 text-indigo-300 font-medium' : 'text-slate-400 hover:text-slate-200'"
               >
-                虚拟硬盘/镜像
+                {{ t('toolbox.modals.largeFiles.filterVirtualDisk') }}
               </button>
               <button
                 @click="largeFileFilter = 'media'"
                 class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
                 :class="largeFileFilter === 'media' ? 'bg-amber-500/20 text-amber-300 font-medium' : 'text-slate-400 hover:text-slate-200'"
               >
-                音视频媒体
+                {{ t('toolbox.modals.largeFiles.filterMedia') }}
               </button>
               <button
                 @click="largeFileFilter = 'archive'"
                 class="px-2.5 py-1 rounded-lg transition-all cursor-pointer"
                 :class="largeFileFilter === 'archive' ? 'bg-emerald-500/20 text-emerald-300 font-medium' : 'text-slate-400 hover:text-slate-200'"
               >
-                压缩与安装包
+                {{ t('toolbox.modals.largeFiles.filterArchive') }}
               </button>
             </div>
 
@@ -671,11 +671,11 @@
               @change="handleScanLargeFiles"
               class="px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-300 focus:outline-none focus:border-cyan-500 cursor-pointer"
             >
-              <option :value="200">大于 200 MB</option>
-              <option :value="500">大于 500 MB</option>
-              <option :value="1024">大于 1.0 GB</option>
-              <option :value="2048">大于 2.0 GB</option>
-              <option :value="5120">大于 5.0 GB</option>
+              <option :value="200">{{ t('toolbox.modals.largeFiles.minSize200') }}</option>
+              <option :value="500">{{ t('toolbox.modals.largeFiles.minSize500') }}</option>
+              <option :value="1024">{{ t('toolbox.modals.largeFiles.minSize1024') }}</option>
+              <option :value="2048">{{ t('toolbox.modals.largeFiles.minSize2048') }}</option>
+              <option :value="5120">{{ t('toolbox.modals.largeFiles.minSize5120') }}</option>
             </select>
           </div>
 
@@ -686,7 +686,7 @@
               <input
                 v-model="largeFileSearch"
                 type="text"
-                placeholder="搜索大文件名或扩展名..."
+                :placeholder="t('toolbox.modals.largeFiles.searchPlaceholder')"
                 class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500"
               />
             </div>
@@ -694,7 +694,7 @@
               @click="handleScanLargeFiles"
               :disabled="isLargeFileScanning"
               class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all cursor-pointer border border-slate-700/50"
-              title="重新扫描大文件"
+              :title="t('toolbox.modals.largeFiles.rescanTooltip')"
             >
               <RotateCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isLargeFileScanning }" />
             </button>
@@ -705,7 +705,7 @@
         <div class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[48vh]">
           <div v-if="isLargeFileScanning" class="text-center py-12 text-xs text-slate-400 flex items-center justify-center gap-2">
             <Loader2 class="w-4 h-4 animate-spin text-cyan-400" />
-            <span>正在多线程排查磁盘空间与大文件...</span>
+            <span>{{ t('toolbox.modals.largeFiles.scanning') }}</span>
           </div>
 
           <div
@@ -738,17 +738,17 @@
               <button
                 @click="handleLocateFile(file.path)"
                 class="px-2.5 py-1 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all cursor-pointer flex items-center gap-1 border border-slate-700/50"
-                title="在操作系统的文件资源管理器中打开并高亮选中"
+                :title="t('toolbox.modals.largeFiles.locateTooltip')"
               >
                 <FolderSearch class="w-3 h-3 text-cyan-400" />
-                <span>定位</span>
+                <span>{{ t('toolbox.modals.largeFiles.locateBtn') }}</span>
               </button>
 
               <!-- 删除文件 -->
               <button
                 @click="handleDeleteLargeFile(file)"
                 class="px-2 py-1 text-xs font-medium text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-600 rounded-lg transition-all cursor-pointer border border-rose-500/20"
-                title="删除此大文件"
+                :title="t('toolbox.modals.largeFiles.deleteTooltip')"
               >
                 <Trash2 class="w-3 h-3" />
               </button>
@@ -756,7 +756,7 @@
           </div>
 
           <div v-else class="text-center py-12 text-xs text-slate-500">
-            暂未发现大于 {{ largeFileMinSizeMB }} MB 的大文件
+            {{ t('toolbox.modals.largeFiles.empty', largeFileMinSizeMB) }}
           </div>
         </div>
 
@@ -766,8 +766,8 @@
 
         <!-- Footer -->
         <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-xs text-slate-500 font-mono">
-          <span>共探测到 {{ filteredLargeFiles.length }} 个大文件，合计占用 {{ totalFilteredLargeFileSize }}</span>
-          <span>按体积从大到小排列</span>
+          <span>{{ t('toolbox.modals.largeFiles.footerSummary', filteredLargeFiles.length, totalFilteredLargeFileSize) }}</span>
+          <span>{{ t('toolbox.modals.largeFiles.footerSorted') }}</span>
         </div>
       </div>
     </div>
@@ -786,12 +786,12 @@
             </div>
             <div>
               <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-                活跃进程急速降温与查杀
+                {{ t('toolbox.modals.processKiller.title') }}
                 <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/20 font-mono">
-                  Realtime Process Manager
+                  {{ t('toolbox.modals.processKiller.badge') }}
                 </span>
               </h3>
-              <p class="text-xs text-slate-400">全盘多维扫描 CPU 与内存排名前列的活跃进程，自动识别卡顿元凶与流氓软件并安全查杀</p>
+              <p class="text-xs text-slate-400">{{ t('toolbox.modals.processKiller.subtitle') }}</p>
             </div>
           </div>
 
@@ -800,7 +800,7 @@
               @click="handleFetchProcesses(false)"
               :disabled="isProcessLoading"
               class="p-2 text-slate-400 hover:text-violet-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-              title="刷新活跃进程"
+              :title="t('toolbox.modals.processKiller.refreshTooltip')"
             >
               <RotateCw class="w-4 h-4" :class="{ 'animate-spin': isProcessLoading }" />
             </button>
@@ -816,15 +816,15 @@
         <!-- Top Metrics Cards & Quick Cooldown -->
         <div class="grid grid-cols-4 gap-3">
           <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80">
-            <div class="text-[11px] text-slate-400 mb-1">活跃进程总数</div>
-            <div class="text-base font-bold font-mono text-slate-200">{{ processList.length }} <span class="text-xs font-normal text-slate-500">个</span></div>
+            <div class="text-[11px] text-slate-400 mb-1">{{ t('toolbox.modals.processKiller.metricActiveTotal') }}</div>
+            <div class="text-base font-bold font-mono text-slate-200">{{ processList.length }} <span class="text-xs font-normal text-slate-500">{{ t('toolbox.modals.processKiller.unitCount') }}</span></div>
           </div>
           <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80">
-            <div class="text-[11px] text-slate-400 mb-1">高负载待优化项</div>
-            <div class="text-base font-bold font-mono text-amber-400">{{ highCpuCount + highMemCount }} <span class="text-xs font-normal text-slate-500">项</span></div>
+            <div class="text-[11px] text-slate-400 mb-1">{{ t('toolbox.modals.processKiller.metricHighLoad') }}</div>
+            <div class="text-base font-bold font-mono text-amber-400">{{ highCpuCount + highMemCount }} <span class="text-xs font-normal text-slate-500">{{ t('toolbox.modals.processKiller.unitItems') }}</span></div>
           </div>
           <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80">
-            <div class="text-[11px] text-slate-400 mb-1">进程总占用物理内存</div>
+            <div class="text-[11px] text-slate-400 mb-1">{{ t('toolbox.modals.processKiller.metricTotalMem') }}</div>
             <div class="text-base font-bold font-mono text-violet-400">{{ totalProcessMemGB }} <span class="text-xs font-normal text-slate-500">GB</span></div>
           </div>
           <button
@@ -834,9 +834,9 @@
           >
             <div class="flex items-center gap-1.5 font-bold">
               <Zap class="w-4 h-4 text-amber-300" />
-              <span>一键急速降温</span>
+              <span>{{ t('toolbox.modals.processKiller.quickCooldown') }}</span>
             </div>
-            <span class="text-[10px] text-violet-200">自动终止异常高负载第三方应用</span>
+            <span class="text-[10px] text-violet-200">{{ t('toolbox.modals.processKiller.quickCooldownSub') }}</span>
           </button>
         </div>
 
@@ -849,41 +849,41 @@
               class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
               :class="processFilter === 'all' ? 'bg-violet-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'"
             >
-              全部 ({{ processList.length }})
+              {{ t('toolbox.modals.processKiller.filterAll', processList.length) }}
             </button>
             <button
               @click="processFilter = 'high_cpu'"
               class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
               :class="processFilter === 'high_cpu' ? 'bg-violet-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'"
             >
-              🔥 高 CPU ({{ processList.filter(p => p.cpuPercent > 5.0).length }})
+              {{ t('toolbox.modals.processKiller.filterHighCpu', processList.filter(p => p.cpuPercent > 5.0).length) }}
             </button>
             <button
               @click="processFilter = 'high_mem'"
               class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
               :class="processFilter === 'high_mem' ? 'bg-violet-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'"
             >
-              📊 高内存 ({{ processList.filter(p => p.memoryMB > 400.0).length }})
+              {{ t('toolbox.modals.processKiller.filterHighMem', processList.filter(p => p.memoryMB > 400.0).length) }}
             </button>
             <button
               @click="processFilter = 'safe'"
               class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
               :class="processFilter === 'safe' ? 'bg-violet-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'"
             >
-              ⚡ 可安全查杀 ({{ processList.filter(p => p.isSafeToKill).length }})
+              {{ t('toolbox.modals.processKiller.filterSafe', processList.filter(p => p.isSafeToKill).length) }}
             </button>
           </div>
 
           <!-- Sort & Search -->
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-1 text-xs text-slate-400 font-mono">
-              <span>排序:</span>
+              <span>{{ t('toolbox.modals.processKiller.sortLabel') }}</span>
               <select
                 v-model="processSort"
                 class="bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2 py-1 text-xs outline-none cursor-pointer"
               >
-                <option value="memory">按内存占用 (降序)</option>
-                <option value="cpu">按 CPU 占比 (降序)</option>
+                <option value="memory">{{ t('toolbox.modals.processKiller.sortMem') }}</option>
+                <option value="cpu">{{ t('toolbox.modals.processKiller.sortCpu') }}</option>
               </select>
             </div>
 
@@ -892,7 +892,7 @@
               <input
                 v-model="processSearch"
                 type="text"
-                placeholder="搜索进程名或 PID..."
+                :placeholder="t('toolbox.modals.processKiller.searchPlaceholder')"
                 class="w-full bg-slate-950 border border-slate-800 text-slate-200 pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none focus:border-violet-500/50"
               />
             </div>
@@ -903,7 +903,7 @@
         <div class="flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-[380px]">
           <div v-if="isProcessLoading && processList.length === 0" class="text-center py-20 text-xs text-slate-400 flex items-center justify-center gap-2">
             <Loader2 class="w-4 h-4 animate-spin text-violet-400" />
-            <span>正在全盘扫描活跃进程负载指标...</span>
+            <span>{{ t('toolbox.modals.processKiller.scanning') }}</span>
           </div>
 
           <div
@@ -932,15 +932,15 @@
                   <span
                     v-if="!proc.isSafeToKill"
                     class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20"
-                    title="受系统安全白名单保护，禁止普通结束"
+                    :title="t('toolbox.modals.processKiller.systemProtectTooltip')"
                   >
-                    🛡️ 系统核心保护
+                    {{ t('toolbox.modals.processKiller.systemProtectTag') }}
                   </span>
                   <span
                     v-else
                     class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
                   >
-                    ⚡ 可安全查杀
+                    {{ t('toolbox.modals.processKiller.safeKillTag') }}
                   </span>
                 </div>
                 <p v-if="proc.exe_path" class="text-[10px] font-mono text-slate-500 truncate" :title="proc.exe_path">
@@ -979,15 +979,15 @@
                 :disabled="!proc.isSafeToKill || isProcessKilling"
                 class="px-2.5 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer border"
                 :class="proc.isSafeToKill ? 'bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border-rose-500/20 shadow-sm' : 'bg-slate-800/40 text-slate-600 border-transparent cursor-not-allowed'"
-                title="结束此进程"
+                :title="t('toolbox.modals.processKiller.killTooltip')"
               >
-                结束进程
+                {{ t('toolbox.modals.processKiller.killBtn') }}
               </button>
             </div>
           </div>
 
           <div v-else class="text-center py-12 text-xs text-slate-500">
-            暂未发现匹配的进程
+            {{ t('toolbox.modals.processKiller.empty') }}
           </div>
         </div>
 
@@ -1003,9 +1003,9 @@
               @click="toggleSelectAllSafe"
               class="text-violet-400 hover:text-violet-300 underline cursor-pointer"
             >
-              {{ selectedPids.length > 0 ? '取消全选' : '全选可查杀项' }}
+              {{ selectedPids.length > 0 ? t('toolbox.modals.processKiller.deselectAll') : t('toolbox.modals.processKiller.selectAllSafe') }}
             </button>
-            <span>已勾选 <strong class="text-violet-400 font-mono">{{ selectedPids.length }}</strong> 项</span>
+            <span>{{ t('toolbox.modals.processKiller.selectedCount', selectedPids.length) }}</span>
           </div>
 
           <div class="flex items-center gap-3">
@@ -1016,9 +1016,9 @@
               class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-1.5 shadow-md shadow-rose-600/20 cursor-pointer"
             >
               <Trash2 class="w-3.5 h-3.5" />
-              <span>一键结束选中的 {{ selectedPids.length }} 个进程</span>
+              <span>{{ t('toolbox.modals.processKiller.batchKillBtn', selectedPids.length) }}</span>
             </button>
-            <span class="text-slate-500 font-mono">共 {{ filteredProcessList.length }} 个进程</span>
+            <span class="text-slate-500 font-mono">{{ t('toolbox.modals.processKiller.footerTotal', filteredProcessList.length) }}</span>
           </div>
         </div>
       </div>
@@ -1038,27 +1038,27 @@
             </div>
             <div>
               <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-                Docker 容器与镜像专项体检
+                {{ t('toolbox.modals.docker.title') }}
                 <span
                   v-if="dockerData?.isRunning"
                   class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
                 >
-                  Daemon Running
+                  {{ t('toolbox.modals.docker.badgeRunning') }}
                 </span>
                 <span
                   v-else-if="dockerData?.isInstalled"
                   class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20"
                 >
-                  Daemon Stopped
+                  {{ t('toolbox.modals.docker.badgeStopped') }}
                 </span>
                 <span
                   v-else
                   class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700"
                 >
-                  Not Installed
+                  {{ t('toolbox.modals.docker.badgeNotInstalled') }}
                 </span>
               </h3>
-              <p class="text-xs text-slate-400">深度分析本机未运行容器、悬挂镜像、构建缓存与无主存储卷，一键释放巨量空间</p>
+              <p class="text-xs text-slate-400">{{ t('toolbox.modals.docker.subtitle') }}</p>
             </div>
           </div>
 
@@ -1067,7 +1067,7 @@
               @click="handleScanDocker"
               :disabled="isDockerScanning"
               class="p-2 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-              title="重新体检 Docker"
+              :title="t('toolbox.modals.docker.refreshTooltip')"
             >
               <RotateCw class="w-4 h-4" :class="{ 'animate-spin': isDockerScanning }" />
             </button>
@@ -1083,7 +1083,7 @@
         <!-- Scanning State -->
         <div v-if="isDockerScanning" class="text-center py-16 text-xs text-slate-400 flex items-center justify-center gap-2">
           <Loader2 class="w-4 h-4 animate-spin text-blue-400" />
-          <span>正在与本地 Docker 守护进程通信并计算存储空间...</span>
+          <span>{{ t('toolbox.modals.docker.scanning') }}</span>
         </div>
 
         <!-- Not Installed or Stopped Warning -->
@@ -1091,9 +1091,9 @@
           <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
             <Layers class="w-6 h-6" />
           </div>
-          <h4 class="text-sm font-bold text-slate-200">未检测到 Docker 环境</h4>
+          <h4 class="text-sm font-bold text-slate-200">{{ t('toolbox.modals.docker.notInstalledTitle') }}</h4>
           <p class="text-xs text-slate-400 max-w-md mx-auto">
-            系统 PATH 中未找到 <code class="text-blue-400">docker</code> 命令行工具。如果您未安装 Docker Desktop 或 Docker Engine，可以忽略此项。
+            {{ t('toolbox.modals.docker.notInstalledDesc') }}
           </p>
         </div>
 
@@ -1101,9 +1101,9 @@
           <div class="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center mx-auto text-amber-400">
             <Layers class="w-6 h-6" />
           </div>
-          <h4 class="text-sm font-bold text-amber-300">Docker 服务未在运行</h4>
+          <h4 class="text-sm font-bold text-amber-300">{{ t('toolbox.modals.docker.stoppedTitle') }}</h4>
           <p class="text-xs text-slate-300 max-w-md mx-auto">
-            已检测到 Docker CLI ({{ dockerData.version || '已安装' }})，但 Docker Daemon 守护进程目前未启动。请先启动 Docker Desktop 后再次体检。
+            {{ t('toolbox.modals.docker.stoppedDesc', dockerData.version || (locale === 'zh-CN' ? '已安装' : 'Installed')) }}
           </p>
         </div>
 
@@ -1114,12 +1114,12 @@
             <!-- Images -->
             <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-2">
               <div class="flex items-center justify-between text-xs">
-                <span class="text-slate-400 font-medium">镜像 (Images)</span>
-                <span class="font-mono text-[10px] text-slate-500">{{ dockerData.imagesCount }} 个</span>
+                <span class="text-slate-400 font-medium">{{ t('toolbox.modals.docker.cardImages') }}</span>
+                <span class="font-mono text-[10px] text-slate-500">{{ t('toolbox.modals.docker.cardImagesCount', dockerData.imagesCount) }}</span>
               </div>
               <div class="text-base font-bold font-mono text-slate-200">{{ dockerData.imagesSize }}</div>
               <div class="text-[11px] font-mono text-emerald-400 flex items-center justify-between">
-                <span>可回收:</span>
+                <span>{{ t('toolbox.modals.docker.cardReclaimable') }}</span>
                 <span class="font-bold">{{ dockerData.imagesReclaimable }}</span>
               </div>
               <button
@@ -1127,39 +1127,39 @@
                 :disabled="isDockerPruning"
                 class="w-full py-1 text-[11px] rounded-lg bg-blue-500/10 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/20 transition-all cursor-pointer"
               >
-                清理未用镜像
+                {{ t('toolbox.modals.docker.cardCleanImages') }}
               </button>
             </div>
 
             <!-- Containers -->
             <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-2">
               <div class="flex items-center justify-between text-xs">
-                <span class="text-slate-400 font-medium">容器 (Containers)</span>
-                <span class="font-mono text-[10px] text-slate-500">{{ dockerData.containersCount }} 个</span>
+                <span class="text-slate-400 font-medium">{{ t('toolbox.modals.docker.cardContainers') }}</span>
+                <span class="font-mono text-[10px] text-slate-500">{{ t('toolbox.modals.docker.cardImagesCount', dockerData.containersCount) }}</span>
               </div>
               <div class="text-base font-bold font-mono text-slate-200">{{ dockerData.containersSize }}</div>
               <div class="text-[11px] font-mono text-amber-400 flex items-center justify-between">
-                <span>停止容器:</span>
-                <span class="font-bold">{{ dockerData.stoppedContainersCount }} 个</span>
+                <span>{{ t('toolbox.modals.docker.cardStoppedContainers') }}</span>
+                <span class="font-bold">{{ t('toolbox.modals.docker.cardImagesCount', dockerData.stoppedContainersCount) }}</span>
               </div>
               <button
                 @click="handlePruneDocker('containers')"
                 :disabled="isDockerPruning || dockerData.stoppedContainersCount === 0"
                 class="w-full py-1 text-[11px] rounded-lg bg-amber-500/10 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/20 transition-all cursor-pointer disabled:opacity-40"
               >
-                清理停止容器
+                {{ t('toolbox.modals.docker.cardCleanContainers') }}
               </button>
             </div>
 
             <!-- Build Cache -->
             <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-2">
               <div class="flex items-center justify-between text-xs">
-                <span class="text-slate-400 font-medium">构建缓存 (Build Cache)</span>
-                <span class="font-mono text-[10px] text-slate-500">Cache</span>
+                <span class="text-slate-400 font-medium">{{ t('toolbox.modals.docker.cardBuildCache') }}</span>
+                <span class="font-mono text-[10px] text-slate-500">{{ t('toolbox.modals.docker.cardCacheTag') }}</span>
               </div>
               <div class="text-base font-bold font-mono text-slate-200">{{ dockerData.buildCacheSize }}</div>
               <div class="text-[11px] font-mono text-emerald-400 flex items-center justify-between">
-                <span>可回收:</span>
+                <span>{{ t('toolbox.modals.docker.cardReclaimable') }}</span>
                 <span class="font-bold">{{ dockerData.buildCacheReclaimable }}</span>
               </div>
               <button
@@ -1167,15 +1167,15 @@
                 :disabled="isDockerPruning"
                 class="w-full py-1 text-[11px] rounded-lg bg-purple-500/10 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/20 transition-all cursor-pointer"
               >
-                清除构建缓存
+                {{ t('toolbox.modals.docker.cardCleanBuildCache') }}
               </button>
             </div>
 
             <!-- Quick Prune All -->
             <div class="p-3.5 rounded-xl bg-gradient-to-br from-blue-950/80 to-slate-950 border border-blue-500/30 flex flex-col justify-between space-y-2">
               <div>
-                <div class="text-[11px] font-medium text-blue-300 mb-1">Docker 深度瘦身</div>
-                <p class="text-[10px] text-slate-400">一键安全移除所有已停止的容器、孤儿镜像与构建残留</p>
+                <div class="text-[11px] font-medium text-blue-300 mb-1">{{ t('toolbox.modals.docker.cardDeepSlim') }}</div>
+                <p class="text-[10px] text-slate-400">{{ t('toolbox.modals.docker.cardDeepSlimDesc') }}</p>
               </div>
               <button
                 @click="handlePruneDocker('system')"
@@ -1183,7 +1183,7 @@
                 class="w-full py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/20 transition-all cursor-pointer border border-white/10"
               >
                 <Zap class="w-3.5 h-3.5 text-amber-300" />
-                <span>一键全盘瘦身</span>
+                <span>{{ t('toolbox.modals.docker.cardPruneAll') }}</span>
               </button>
             </div>
           </div>
@@ -1195,21 +1195,21 @@
               class="px-3 py-1 rounded-lg transition-colors cursor-pointer"
               :class="dockerTab === 'overview' ? 'bg-blue-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'"
             >
-              📊 空间概览与建议
+              {{ t('toolbox.modals.docker.tabOverview') }}
             </button>
             <button
               @click="dockerTab = 'containers'"
               class="px-3 py-1 rounded-lg transition-colors cursor-pointer"
               :class="dockerTab === 'containers' ? 'bg-blue-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'"
             >
-              🛑 已停止的容器 ({{ dockerData.stoppedContainers.length }})
+              {{ t('toolbox.modals.docker.tabContainers', dockerData.stoppedContainers.length) }}
             </button>
             <button
               @click="dockerTab = 'images'"
               class="px-3 py-1 rounded-lg transition-colors cursor-pointer"
               :class="dockerTab === 'images' ? 'bg-blue-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'"
             >
-              📦 悬挂垃圾镜像 ({{ dockerData.danglingImages.length }})
+              {{ t('toolbox.modals.docker.tabImages', dockerData.danglingImages.length) }}
             </button>
           </div>
 
@@ -1220,13 +1220,13 @@
               <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2">
                 <h4 class="font-bold text-slate-200 flex items-center gap-2">
                   <Activity class="w-4 h-4 text-blue-400" />
-                  Docker 环境健康体检结论
+                  {{ t('toolbox.modals.docker.overviewTitle') }}
                 </h4>
                 <div class="grid grid-cols-2 gap-3 text-slate-400 font-mono text-[11px] pt-1">
-                  <div>• Docker 版本: <span class="text-slate-200">{{ dockerData.version }}</span></div>
-                  <div>• 本地数据卷占用: <span class="text-slate-200">{{ dockerData.volumesSize }}</span> ({{ dockerData.volumesCount }} 个)</div>
-                  <div>• 镜像总占用: <span class="text-slate-200">{{ dockerData.imagesSize }}</span></div>
-                  <div>• 构建缓存占用: <span class="text-slate-200">{{ dockerData.buildCacheSize }}</span></div>
+                  <div>{{ t('toolbox.modals.docker.overviewVersion', dockerData.version || '') }}</div>
+                  <div>{{ t('toolbox.modals.docker.overviewVolumes', dockerData.volumesSize, dockerData.volumesCount) }}</div>
+                  <div>{{ t('toolbox.modals.docker.overviewImages', dockerData.imagesSize) }}</div>
+                  <div>{{ t('toolbox.modals.docker.overviewCache', dockerData.buildCacheSize) }}</div>
                 </div>
               </div>
             </div>
@@ -1245,14 +1245,14 @@
                     <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">ID: {{ c.id.slice(0, 10) }}</span>
                     <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Exited</span>
                   </div>
-                  <p class="text-[11px] font-mono text-slate-400 truncate">镜像: {{ c.image }} | {{ c.status }}</p>
+                  <p class="text-[11px] font-mono text-slate-400 truncate">{{ t('toolbox.modals.docker.containersItemStatus', c.image, c.status) }}</p>
                 </div>
                 <div class="font-mono text-slate-400 text-right text-xs">
                   {{ c.size }}
                 </div>
               </div>
               <div v-else class="text-center py-10 text-xs text-slate-500">
-                🎉 暂无已停止的历史残留容器
+                {{ t('toolbox.modals.docker.containersEmpty') }}
               </div>
             </div>
 
@@ -1270,14 +1270,14 @@
                     <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">{{ img.id.slice(0, 12) }}</span>
                     <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">Dangling</span>
                   </div>
-                  <p class="text-[11px] font-mono text-slate-500">创建于: {{ img.createdSince }}</p>
+                  <p class="text-[11px] font-mono text-slate-500">{{ t('toolbox.modals.docker.imagesItemCreated', img.createdSince) }}</p>
                 </div>
                 <div class="font-mono text-cyan-400 font-bold text-right text-xs">
                   {{ img.size }}
                 </div>
               </div>
               <div v-else class="text-center py-10 text-xs text-slate-500">
-                🎉 暂无悬挂的未命名垃圾镜像
+                {{ t('toolbox.modals.docker.imagesEmpty') }}
               </div>
             </div>
           </div>
@@ -1290,8 +1290,8 @@
 
         <!-- Footer -->
         <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-xs text-slate-500 font-mono">
-          <span>Docker Engine Resource Analyzer</span>
-          <span>安全清理仅移除无主与已停止资源</span>
+          <span>{{ t('toolbox.modals.docker.footerEngine') }}</span>
+          <span>{{ t('toolbox.modals.docker.footerSafeNote') }}</span>
         </div>
       </div>
     </div>
@@ -1310,27 +1310,27 @@
             </div>
             <div>
               <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-                DNS 缓存强制刷新与网络急救
+                {{ t('toolbox.modals.networkRepair.title') }}
                 <span
                   v-if="netHealth?.overallStatus === 'healthy'"
                   class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
                 >
-                  🟢 全链路畅通
+                  {{ t('toolbox.modals.networkRepair.statusHealthy') }}
                 </span>
                 <span
                   v-else-if="netHealth?.overallStatus === 'dns_failed'"
                   class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20"
                 >
-                  🟡 DNS 域名解析异常
+                  {{ t('toolbox.modals.networkRepair.statusDnsFailed') }}
                 </span>
                 <span
                   v-else
                   class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/20"
                 >
-                  🔴 网络断开
+                  {{ t('toolbox.modals.networkRepair.statusDisconnected') }}
                 </span>
               </h3>
-              <p class="text-xs text-slate-400">全链路排查网卡、网关、公网与 DNS 解析连通性，一键复位网络协议栈</p>
+              <p class="text-xs text-slate-400">{{ t('toolbox.modals.networkRepair.subtitle') }}</p>
             </div>
           </div>
 
@@ -1339,7 +1339,7 @@
               @click="handleDiagnoseNet"
               :disabled="isNetDiagnosing"
               class="p-2 text-slate-400 hover:text-teal-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-              title="重新诊断全链路网络"
+              :title="t('toolbox.modals.networkRepair.refreshTooltip')"
             >
               <RotateCw class="w-4 h-4" :class="{ 'animate-spin': isNetDiagnosing }" />
             </button>
@@ -1355,7 +1355,7 @@
         <!-- 4 Steps Network Chain Topology -->
         <div class="space-y-2">
           <div class="text-[11px] font-medium text-slate-400 flex items-center justify-between">
-            <span>四段式网络链路拓扑实时检测</span>
+            <span>{{ t('toolbox.modals.networkRepair.topologyTitle') }}</span>
             <span class="text-slate-500 font-mono text-[10px]">{{ netHealth?.adapterName }}</span>
           </div>
 
@@ -1363,48 +1363,48 @@
             <!-- 1. Local Adapter -->
             <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
               <div class="flex items-center justify-between text-xs">
-                <span class="text-slate-400">1. 本机物理网卡</span>
+                <span class="text-slate-400">{{ t('toolbox.modals.networkRepair.step1Name') }}</span>
                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
               </div>
               <div class="text-xs font-bold font-mono text-slate-200 truncate" :title="netHealth?.localIp">{{ netHealth?.localIp || '127.0.0.1' }}</div>
-              <div class="text-[10px] font-mono text-slate-500">已就绪</div>
+              <div class="text-[10px] font-mono text-slate-500">{{ t('toolbox.modals.networkRepair.step1Status') }}</div>
             </div>
 
             <!-- 2. Gateway Router -->
             <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
               <div class="flex items-center justify-between text-xs">
-                <span class="text-slate-400">2. 路由器网关</span>
+                <span class="text-slate-400">{{ t('toolbox.modals.networkRepair.step2Name') }}</span>
                 <span class="w-2 h-2 rounded-full" :class="netHealth?.gatewayPingMs ? 'bg-emerald-400' : 'bg-rose-400'"></span>
               </div>
               <div class="text-xs font-bold font-mono text-slate-200 truncate" :title="netHealth?.gatewayIp">{{ netHealth?.gatewayIp || '192.168.1.1' }}</div>
               <div class="text-[10px] font-mono" :class="netHealth?.gatewayPingMs ? 'text-emerald-400' : 'text-rose-400'">
-                {{ netHealth?.gatewayPingMs ? `${netHealth.gatewayPingMs} ms (局域网)` : '网关超时' }}
+                {{ netHealth?.gatewayPingMs ? t('toolbox.modals.networkRepair.step2Lan', netHealth.gatewayPingMs) : t('toolbox.modals.networkRepair.step2Timeout') }}
               </div>
             </div>
 
             <!-- 3. Public Backbone -->
             <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
               <div class="flex items-center justify-between text-xs">
-                <span class="text-slate-400">3. 公网骨干互联</span>
+                <span class="text-slate-400">{{ t('toolbox.modals.networkRepair.step3Name') }}</span>
                 <span class="w-2 h-2 rounded-full" :class="netHealth?.publicDnsPingMs ? 'bg-emerald-400' : 'bg-rose-400'"></span>
               </div>
               <div class="text-xs font-bold font-mono text-slate-200">223.5.5.5</div>
               <div class="text-[10px] font-mono" :class="netHealth?.publicDnsPingMs ? 'text-emerald-400' : 'text-rose-400'">
-                {{ netHealth?.publicDnsPingMs ? `${netHealth.publicDnsPingMs} ms (骨干网)` : '公网不可达' }}
+                {{ netHealth?.publicDnsPingMs ? t('toolbox.modals.networkRepair.step3Wan', netHealth.publicDnsPingMs) : t('toolbox.modals.networkRepair.step3Timeout') }}
               </div>
             </div>
 
             <!-- 4. DNS & HTTP -->
             <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
               <div class="flex items-center justify-between text-xs">
-                <span class="text-slate-400">4. 域名解析与 HTTP</span>
+                <span class="text-slate-400">{{ t('toolbox.modals.networkRepair.step4Name') }}</span>
                 <span class="w-2 h-2 rounded-full" :class="netHealth?.dnsResolveOk ? 'bg-emerald-400' : 'bg-rose-400'"></span>
               </div>
               <div class="text-xs font-bold font-mono" :class="netHealth?.dnsResolveOk ? 'text-slate-200' : 'text-rose-400'">
-                {{ netHealth?.dnsResolveOk ? 'baidu.com (OK)' : 'DNS 解析失败' }}
+                {{ netHealth?.dnsResolveOk ? t('toolbox.modals.networkRepair.step4DnsOk') : t('toolbox.modals.networkRepair.step4DnsFail') }}
               </div>
               <div class="text-[10px] font-mono" :class="netHealth?.dnsResolveOk ? 'text-teal-400' : 'text-rose-400'">
-                {{ netHealth?.dnsResolveOk ? `解析: ${netHealth?.dnsResolveMs || 10}ms | HTTP: ${netHealth?.httpLatencyMs || 30}ms` : '打不开网页' }}
+                {{ netHealth?.dnsResolveOk ? t('toolbox.modals.networkRepair.step4DetailOk', netHealth?.dnsResolveMs || 10, netHealth?.httpLatencyMs || 30) : t('toolbox.modals.networkRepair.step4DetailFail') }}
               </div>
             </div>
           </div>
@@ -1415,10 +1415,10 @@
           <div class="space-y-1">
             <div class="text-sm font-bold text-teal-300 flex items-center gap-2">
               <Zap class="w-4 h-4 text-amber-300" />
-              一键全套网络急救复位 (Full Network Stack Repair)
+              {{ t('toolbox.modals.networkRepair.fullRepairTitle') }}
             </div>
             <p class="text-xs text-slate-300">
-              综合执行：清空 DNS 缓存 + 清除 ARP 缓存 + 重置 Winsock 目录 + 重置 TCP/IP 栈 + 恢复 DHCP 自动分配
+              {{ t('toolbox.modals.networkRepair.fullRepairDesc') }}
             </p>
           </div>
 
@@ -1428,13 +1428,13 @@
             class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-teal-600/30 transition-all cursor-pointer flex-shrink-0 border border-white/10"
           >
             <RotateCw class="w-4 h-4" :class="{ 'animate-spin': isNetRepairing }" />
-            <span>执行一键网络急救</span>
+            <span>{{ t('toolbox.modals.networkRepair.fullRepairBtn') }}</span>
           </button>
         </div>
 
         <!-- 6 Targeted Repair Quick Cards -->
         <div class="space-y-2">
-          <div class="text-[11px] font-medium text-slate-400">分项针对性网络修复工具箱</div>
+          <div class="text-[11px] font-medium text-slate-400">{{ t('toolbox.modals.networkRepair.subtoolsTitle') }}</div>
           <div class="grid grid-cols-3 gap-3">
             <!-- 1. Flush DNS -->
             <button
@@ -1443,10 +1443,10 @@
               class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-teal-500/50 text-left space-y-1.5 transition-all cursor-pointer group"
             >
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">🔄 刷新本地 DNS 缓存</span>
+                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">{{ t('toolbox.modals.networkRepair.tool1Title') }}</span>
                 <span class="text-[10px] font-mono text-slate-500">flushdns</span>
               </div>
-              <p class="text-[10px] text-slate-400">清除本机已失效或污染的域名 IP 解析缓存记录</p>
+              <p class="text-[10px] text-slate-400">{{ t('toolbox.modals.networkRepair.tool1Desc') }}</p>
             </button>
 
             <!-- 2. Reset Winsock -->
@@ -1456,10 +1456,10 @@
               class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-teal-500/50 text-left space-y-1.5 transition-all cursor-pointer group"
             >
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">🛠️ 重置 Winsock 目录</span>
+                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">{{ t('toolbox.modals.networkRepair.tool2Title') }}</span>
                 <span class="text-[10px] font-mono text-slate-500">winsock reset</span>
               </div>
-              <p class="text-[10px] text-slate-400">复位代理驱动拦截与套接字目录，解决软件代理死锁</p>
+              <p class="text-[10px] text-slate-400">{{ t('toolbox.modals.networkRepair.tool2Desc') }}</p>
             </button>
 
             <!-- 3. Reset TCP/IP -->
@@ -1469,10 +1469,10 @@
               class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-teal-500/50 text-left space-y-1.5 transition-all cursor-pointer group"
             >
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">🌐 重置 TCP/IP 协议栈</span>
+                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">{{ t('toolbox.modals.networkRepair.tool3Title') }}</span>
                 <span class="text-[10px] font-mono text-slate-500">int ip reset</span>
               </div>
-              <p class="text-[10px] text-slate-400">重写注册表传输控制协议参数，恢复默认网络栈配置</p>
+              <p class="text-[10px] text-slate-400">{{ t('toolbox.modals.networkRepair.tool3Desc') }}</p>
             </button>
 
             <!-- 4. Renew IP -->
@@ -1482,10 +1482,10 @@
               class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-teal-500/50 text-left space-y-1.5 transition-all cursor-pointer group"
             >
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">🔌 重新获取 DHCP IP</span>
+                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">{{ t('toolbox.modals.networkRepair.tool4Title') }}</span>
                 <span class="text-[10px] font-mono text-slate-500">ip renew</span>
               </div>
-              <p class="text-[10px] text-slate-400">释放当前局域网 IP 并向路由器重新租用分配</p>
+              <p class="text-[10px] text-slate-400">{{ t('toolbox.modals.networkRepair.tool4Desc') }}</p>
             </button>
 
             <!-- 5. Clear ARP Cache -->
@@ -1495,10 +1495,10 @@
               class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-teal-500/50 text-left space-y-1.5 transition-all cursor-pointer group"
             >
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">🧹 清除 ARP 物理缓存</span>
+                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">{{ t('toolbox.modals.networkRepair.tool5Title') }}</span>
                 <span class="text-[10px] font-mono text-slate-500">arp delete</span>
               </div>
-              <p class="text-[10px] text-slate-400">清除局域网 MAC 地址映射缓存，解决网关欺骗与冲突</p>
+              <p class="text-[10px] text-slate-400">{{ t('toolbox.modals.networkRepair.tool5Desc') }}</p>
             </button>
 
             <!-- 6. Reset DHCP DNS -->
@@ -1508,10 +1508,10 @@
               class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-teal-500/50 text-left space-y-1.5 transition-all cursor-pointer group"
             >
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">🧭 恢复 DHCP 自动 DNS</span>
+                <span class="text-xs font-bold text-slate-200 group-hover:text-teal-400">{{ t('toolbox.modals.networkRepair.tool6Title') }}</span>
                 <span class="text-[10px] font-mono text-slate-500">auto dns</span>
               </div>
-              <p class="text-[10px] text-slate-400">清除可能错误的静态 DNS 配置，由路由器自动下发</p>
+              <p class="text-[10px] text-slate-400">{{ t('toolbox.modals.networkRepair.tool6Desc') }}</p>
             </button>
           </div>
         </div>
@@ -1523,18 +1523,14 @@
 
         <!-- Footer -->
         <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-xs text-slate-500 font-mono">
-          <span>{{ netHealth?.summaryText || '全链路网络监测已就绪' }}</span>
-          <span>急救操作安全且无破坏性</span>
+          <span>{{ netHealth?.summaryText || t('toolbox.modals.networkRepair.defaultSummary') }}</span>
+          <span>{{ t('toolbox.modals.networkRepair.footerSafeNote') }}</span>
         </div>
       </div>
     </div>
 
   </div>
 </template>
-
-
-
-
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
@@ -1569,15 +1565,11 @@ defineEmits<{
 
 const activeModal = ref<'port' | 'autostart' | 'dns' | 'disk' | 'large_files' | 'process_killer' | 'docker' | 'network_repair' | null>(null);
 
-
-
-
 // 0. 垃圾扫描与清理状态
 const garbageResult = ref<GarbageScanResult | null>(null);
 const isGarbageScanning = ref(false);
 const isGarbageCleaning = ref(false);
 const garbageCleanMsg = ref('');
-
 
 // 1. 端口排查状态
 const portTab = ref<'single' | 'all'>('single');
@@ -1624,7 +1616,6 @@ const filteredAutostartList = computed(() => {
 
   return list;
 });
-
 
 // 3. DNS 测速状态
 const dnsList = ref<DnsPingResult[]>([
@@ -1697,23 +1688,23 @@ const handleScanLargeFiles = async () => {
 const handleLocateFile = async (path: string) => {
   try {
     await invoke('locate_file', { path });
-    largeFileActionMsg.value = `已在资源管理器中定位: ${path}`;
+    largeFileActionMsg.value = t('toolbox.modals.largeFiles.locateSuccess', path);
   } catch (e: any) {
-    largeFileActionMsg.value = `定位失败: ${e}`;
+    largeFileActionMsg.value = t('toolbox.modals.largeFiles.locateFailed', e);
   }
 };
 
 const handleDeleteLargeFile = async (file: LargeFileInfo) => {
-  if (!confirm(`确定要永久删除大文件吗？\n${file.fileName} (${file.sizeFormatted})\n路径: ${file.path}`)) {
+  if (!confirm(t('toolbox.modals.largeFiles.deleteConfirm', file.fileName, file.sizeFormatted, file.path))) {
     return;
   }
 
   try {
     await invoke('delete_large_file', { path: file.path });
-    largeFileActionMsg.value = `✅ 已成功删除大文件: ${file.fileName}，已释放 ${file.sizeFormatted}！`;
+    largeFileActionMsg.value = t('toolbox.modals.largeFiles.deleteSuccess', file.fileName, file.sizeFormatted);
     await handleScanLargeFiles();
   } catch (e: any) {
-    largeFileActionMsg.value = `❌ 删除失败: ${e}`;
+    largeFileActionMsg.value = t('toolbox.modals.largeFiles.deleteFailed', e);
   }
 };
 
@@ -1785,7 +1776,7 @@ const handleKillSingleProcess = async (pid: number, name: string) => {
   // 乐观测单：瞬间无感移除目标项，杜绝任何 DOM 坍塌抖动
   processList.value = processList.value.filter((p) => p.pid !== pid);
   selectedPids.value = selectedPids.value.filter((p) => p !== pid);
-  processActionMsg.value = `✅ 已成功结束进程: ${name} (PID: ${pid})`;
+  processActionMsg.value = t('toolbox.modals.processKiller.killSingleSuccess', name, pid);
 
   isProcessKilling.value = true;
   try {
@@ -1793,7 +1784,7 @@ const handleKillSingleProcess = async (pid: number, name: string) => {
     // 静默同步后端最新状态，绝不触发布局重载
     await handleFetchProcesses(true);
   } catch (e: any) {
-    processActionMsg.value = `❌ 结束进程失败: ${e}`;
+    processActionMsg.value = t('toolbox.modals.processKiller.killSingleFailed', e);
     await handleFetchProcesses(true);
   } finally {
     isProcessKilling.value = false;
@@ -1826,10 +1817,10 @@ const handleBatchKillProcesses = async () => {
   isProcessKilling.value = true;
   try {
     const count = await invoke<number>('batch_kill_processes', { pids: targets });
-    processActionMsg.value = `⚡ 批量降温成功！已终止 ${count} 个高负载进程，内存与 CPU 压力已释放。`;
+    processActionMsg.value = t('toolbox.modals.processKiller.batchKillSuccess', count);
     await handleFetchProcesses(true);
   } catch (e: any) {
-    processActionMsg.value = `❌ 批量结束失败: ${e}`;
+    processActionMsg.value = t('toolbox.modals.processKiller.batchKillFailed', e);
     await handleFetchProcesses(true);
   } finally {
     isProcessKilling.value = false;
@@ -1842,7 +1833,7 @@ const handleQuickCoolDown = async () => {
     .map((p) => p.pid);
 
   if (coolDownPids.length === 0) {
-    processActionMsg.value = `🎉 当前未发现异常高占用的第三方流氓进程，系统状态优良！`;
+    processActionMsg.value = t('toolbox.modals.processKiller.cooldownClean');
     return;
   }
 
@@ -1852,16 +1843,15 @@ const handleQuickCoolDown = async () => {
   isProcessKilling.value = true;
   try {
     const count = await invoke<number>('batch_kill_processes', { pids: coolDownPids });
-    processActionMsg.value = `❄️ 一键急速降温完成！已强制终止 ${count} 个高占用进程！`;
+    processActionMsg.value = t('toolbox.modals.processKiller.cooldownSuccess', count);
     await handleFetchProcesses(true);
   } catch (e: any) {
-    processActionMsg.value = `降温失败: ${e}`;
+    processActionMsg.value = t('toolbox.modals.processKiller.cooldownFailed', e);
     await handleFetchProcesses(true);
   } finally {
     isProcessKilling.value = false;
   }
 };
-
 
 const openDirectTool = async (toolId: string) => {
   if (toolId === 'port') {
@@ -1930,15 +1920,14 @@ const handleExecuteRepair = async (action: string) => {
   netRepairMsg.value = '';
   try {
     const res = await invoke<string>('execute_network_repair', { action });
-    netRepairMsg.value = `✅ ${res}`;
+    netRepairMsg.value = t('toolbox.modals.networkRepair.repairSuccessMsg', res);
     await handleDiagnoseNet();
   } catch (e: any) {
-    netRepairMsg.value = `❌ 急救执行失败: ${e}`;
+    netRepairMsg.value = t('toolbox.modals.networkRepair.repairFailedMsg', e);
   } finally {
     isNetRepairing.value = false;
   }
 };
-
 
 // 6. Docker 容器与镜像体检状态
 const dockerData = ref<DockerOverview | null>(null);
@@ -1990,7 +1979,7 @@ const handleScanDocker = async () => {
 };
 
 const handlePruneDocker = async (target: 'containers' | 'images' | 'builder' | 'system') => {
-  if (target === 'system' && !confirm('确定要执行全盘 Docker 深度瘦身吗？\n将清除所有已停止的容器、未使用的悬挂镜像和构建缓存。')) {
+  if (target === 'system' && !confirm(t('toolbox.modals.docker.pruneConfirm'))) {
     return;
   }
 
@@ -1998,17 +1987,14 @@ const handlePruneDocker = async (target: 'containers' | 'images' | 'builder' | '
   dockerActionMsg.value = '';
   try {
     const res = await invoke<string>('prune_docker_target', { target });
-    dockerActionMsg.value = `✅ 清理成功: ${res}`;
+    dockerActionMsg.value = t('toolbox.modals.docker.pruneSuccess', res);
     await handleScanDocker();
   } catch (e: any) {
-    dockerActionMsg.value = `❌ 清理失败: ${e}`;
+    dockerActionMsg.value = t('toolbox.modals.docker.pruneFailed', e);
   } finally {
     isDockerPruning.value = false;
   }
 };
-
-
-
 
 // 扫描 C 盘垃圾
 const handleScanGarbage = async () => {
@@ -2041,15 +2027,14 @@ const handleCleanGarbage = async () => {
     const freedBytes = await invoke<number>('clean_system_garbage');
     const mb = (freedBytes as number) / (1024 * 1024);
     const formatted = mb > 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${mb.toFixed(1)} MB`;
-    garbageCleanMsg.value = `✅ 清理完成！已成功为 C 盘安全释放 ${formatted} 空间！`;
+    garbageCleanMsg.value = t('toolbox.modals.disk.cleanSuccess', formatted);
     await handleScanGarbage();
   } catch (e: any) {
-    garbageCleanMsg.value = `❌ 清理出现异常: ${e}`;
+    garbageCleanMsg.value = t('toolbox.modals.disk.cleanFailed', e);
   } finally {
     isGarbageCleaning.value = false;
   }
 };
-
 
 // 单端口精准排查
 const handleCheckPort = async () => {
@@ -2066,7 +2051,7 @@ const handleCheckPort = async () => {
       isOccupied: false,
       protocol: 'TCP',
       localAddress: `0.0.0.0:${inputPort.value}`,
-      status: 'IDLE (端口空闲)',
+      status: t('toolbox.modals.port.statusIdle'),
     };
   } finally {
     isPortChecking.value = false;
@@ -2092,7 +2077,7 @@ const handleKillPortOccupant = async (pid: number) => {
   portActionFeedback.value = '';
   try {
     await invoke('kill_process', { pid });
-    portActionFeedback.value = `✅ 进程 (PID: ${pid}) 已成功终止，端口已完成释放！`;
+    portActionFeedback.value = t('toolbox.modals.port.feedbackSuccess', pid);
     
     if (portTab.value === 'single') {
       await handleCheckPort();
@@ -2100,7 +2085,7 @@ const handleKillPortOccupant = async (pid: number) => {
       await handleScanAllPorts();
     }
   } catch (err: any) {
-    portActionFeedback.value = `❌ 释放端口失败: ${err}`;
+    portActionFeedback.value = t('toolbox.modals.port.feedbackFailed', err);
   } finally {
     isPortKilling.value = false;
   }
@@ -2125,7 +2110,7 @@ const handleToggleAutostart = async (item: AutostartEntry) => {
     await invoke('toggle_autostart', { name: item.name, enable: !item.enabled });
     item.enabled = !item.enabled;
   } catch (e: any) {
-    alert(`操作失败: ${e}`);
+    alert(t('toolbox.modals.autostart.opFailed', e));
   }
 };
 
@@ -2142,7 +2127,6 @@ const handleDisableAllRecommended = async () => {
     }
   }
 };
-
 
 // DNS 测速
 const handleTestDns = async () => {
@@ -2169,11 +2153,11 @@ const handleApplyDns = async (dns: DnsPingResult) => {
       primary: dns.primaryIp,
       secondary: dns.secondaryIp,
     });
-    dnsApplyMsg.value = msg || `已成功切换为 ${dns.name}！`;
+    dnsApplyMsg.value = msg || t('toolbox.modals.dns.applySuccessMsg', dns.name);
     // 重新测速并刷新状态
     await handleTestDns();
   } catch (err: any) {
-    dnsApplyMsg.value = `设置失败: ${err}`;
+    dnsApplyMsg.value = t('toolbox.modals.dns.setFailedMsg', err);
   } finally {
     isDnsApplying.value = false;
   }
@@ -2185,10 +2169,10 @@ const handleResetDhcpDns = async () => {
   dnsApplyMsg.value = '';
   try {
     const msg = await invoke<string>('reset_dns_to_dhcp');
-    dnsApplyMsg.value = msg || '已恢复为路由器 DHCP 自动获取 DNS！';
+    dnsApplyMsg.value = msg || t('toolbox.modals.dns.resetDhcpSuccessMsg');
     await handleTestDns();
   } catch (err: any) {
-    dnsApplyMsg.value = `恢复失败: ${err}`;
+    dnsApplyMsg.value = t('toolbox.modals.dns.resetFailedMsg', err);
   } finally {
     isDnsApplying.value = false;
   }
@@ -2198,12 +2182,11 @@ const handleResetDhcpDns = async () => {
 const handleFlushDns = async () => {
   try {
     const msg = await invoke<string>('flush_dns_cache');
-    dnsApplyMsg.value = msg || '已成功刷新系统 DNS 解析缓存！';
+    dnsApplyMsg.value = msg || t('toolbox.modals.dns.flushSuccessMsg');
   } catch (err: any) {
-    dnsApplyMsg.value = `刷新失败: ${err}`;
+    dnsApplyMsg.value = t('toolbox.modals.dns.flushFailedMsg', err);
   }
 };
-
 
 const tools = computed(() => [
   {
@@ -2215,7 +2198,7 @@ const tools = computed(() => [
     colorClass: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400',
     badgeClass: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300',
     statusText: t('toolbox.tools.port.badge'),
-    prompt: locale.value === 'zh-CN' ? '请帮我全面排查一下当前系统有哪些网络端口正在被占用或存在冲突？并给出诊断分析。' : 'Please inspect all occupied network ports and detect any conflicts.',
+    prompt: t('toolbox.tools.port.prompt'),
     hasDirectModal: true,
   },
   {
@@ -2227,7 +2210,7 @@ const tools = computed(() => [
     colorClass: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
     badgeClass: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
     statusText: t('toolbox.tools.autostart.badge'),
-    prompt: locale.value === 'zh-CN' ? '帮我检查一下当前系统有哪些开机自启动项，分析哪些是可以安全禁用的。' : 'Check all startup items and recommend which can be safely disabled.',
+    prompt: t('toolbox.tools.autostart.prompt'),
     hasDirectModal: true,
   },
   {
@@ -2239,19 +2222,19 @@ const tools = computed(() => [
     colorClass: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
     badgeClass: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
     statusText: t('toolbox.tools.dns.badge'),
-    prompt: locale.value === 'zh-CN' ? '网络有点慢或者网页经常打不开，帮我测试一下当前网络延迟并刷新 DNS 解析缓存。' : 'Benchmark DNS latency and switch to the fastest DNS server.',
+    prompt: t('toolbox.tools.dns.prompt'),
     hasDirectModal: true,
   },
   {
     id: 'disk',
-    name: locale === 'zh-CN' ? 'C 盘深度垃圾与更新缓存清理' : 'Disk Junk & Update Cache Cleaner',
+    name: t('toolbox.tools.disk.name'),
     category: t('toolbox.catDisk'),
-    description: locale === 'zh-CN' ? '安全扫描系统临时文件、Windows Update 安装缓存和应用崩溃转储日志，安全释放可观的系统盘空间。' : 'Safely scan temporary junk, update caches, and crash dumps to reclaim disk space.',
+    description: t('toolbox.tools.disk.desc'),
     icon: Trash2,
     colorClass: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
     badgeClass: 'bg-rose-500/10 border-rose-500/20 text-rose-300',
-    statusText: locale === 'zh-CN' ? '一键安全瘦身' : 'Clean',
-    prompt: locale.value === 'zh-CN' ? 'C 盘空间不足，帮我扫描一下系统有哪些临时垃圾和更新缓存可以安全清理。' : 'Scan system disk for junk files and reclaim storage space.',
+    statusText: t('toolbox.tools.disk.badge'),
+    prompt: t('toolbox.tools.disk.prompt'),
     hasDirectModal: true,
   },
   {
@@ -2263,7 +2246,7 @@ const tools = computed(() => [
     colorClass: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
     badgeClass: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300',
     statusText: t('toolbox.tools.largeFiles.badge'),
-    prompt: locale.value === 'zh-CN' ? '帮我排查一下电脑磁盘里有哪些占用超过 1GB 的大文件和隐藏镜像。' : 'Locate huge files >500MB hogging disk drives.',
+    prompt: t('toolbox.tools.largeFiles.prompt'),
     hasDirectModal: true,
   },
   {
@@ -2275,19 +2258,19 @@ const tools = computed(() => [
     colorClass: 'bg-violet-500/10 border-violet-500/30 text-violet-400',
     badgeClass: 'bg-violet-500/10 border-violet-500/20 text-violet-300',
     statusText: t('toolbox.tools.processKiller.badge'),
-    prompt: locale.value === 'zh-CN' ? '帮我查看当前系统中 CPU 和内存占用最高的异常进程，并推荐可以结束的项。' : 'Find heavy or unresponsive processes and safely terminate them.',
+    prompt: t('toolbox.tools.processKiller.prompt'),
     hasDirectModal: true,
   },
   {
     id: 'docker',
     name: t('toolbox.tools.docker.name'),
-    category: 'DevOps',
+    category: t('toolbox.catDevOps'),
     description: t('toolbox.tools.docker.desc'),
     icon: Layers,
     colorClass: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
     badgeClass: 'bg-blue-500/10 border-blue-500/20 text-blue-300',
     statusText: t('toolbox.tools.docker.badge'),
-    prompt: locale.value === 'zh-CN' ? '帮我检查一下本机 Docker 环境，看看有哪些停止的容器和无用的悬挂镜像可以清理。' : 'Inspect Docker environment and clean stopped containers & dangling images.',
+    prompt: t('toolbox.tools.docker.prompt'),
     hasDirectModal: true,
   },
   {
@@ -2299,7 +2282,7 @@ const tools = computed(() => [
     colorClass: 'bg-teal-500/10 border-teal-500/30 text-teal-400',
     badgeClass: 'bg-teal-500/10 border-teal-500/20 text-teal-300',
     statusText: t('toolbox.tools.network.badge'),
-    prompt: locale.value === 'zh-CN' ? '网页打不开了，网络连接异常，帮我执行网络急救与 DNS 刷新。' : 'Diagnose network health and perform full-link reset & flush.',
+    prompt: t('toolbox.tools.network.prompt'),
     hasDirectModal: true,
   },
 ]);
