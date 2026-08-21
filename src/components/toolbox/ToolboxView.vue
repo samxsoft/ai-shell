@@ -81,9 +81,9 @@
       v-if="activeModal === 'port'"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
     >
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 max-h-[88vh] flex flex-col">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl h-[580px] max-h-[88vh] p-6 shadow-2xl space-y-4 flex flex-col">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
           <div class="flex items-center gap-2">
             <Radio class="w-5 h-5 text-indigo-400" />
             <div>
@@ -265,9 +265,9 @@
       v-if="activeModal === 'autostart'"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
     >
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl p-6 shadow-2xl space-y-4 max-h-[88vh] flex flex-col">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl h-[600px] max-h-[88vh] p-6 shadow-2xl space-y-4 flex flex-col">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
           <div class="flex items-center gap-2">
             <Zap class="w-5 h-5 text-amber-400" />
             <div>
@@ -405,9 +405,9 @@
       v-if="activeModal === 'dns'"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
     >
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 max-h-[88vh] flex flex-col">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl h-[580px] max-h-[88vh] p-6 shadow-2xl space-y-4 flex flex-col">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
           <div class="flex items-center gap-2">
             <Globe class="w-5 h-5 text-emerald-400" />
             <div>
@@ -521,10 +521,9 @@
       v-if="activeModal === 'disk'"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
     >
-
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4 max-h-[88vh] flex flex-col">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl h-[580px] max-h-[88vh] p-6 shadow-2xl flex flex-col">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
           <div class="flex items-center gap-2">
             <Trash2 class="w-5 h-5 text-rose-400" />
             <div>
@@ -537,68 +536,72 @@
           </button>
         </div>
 
-        <!-- Summary Banner -->
-        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between gap-4">
+        <!-- Summary Banner (Fixed height and stable typography) -->
+        <div class="p-4 my-3 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between gap-4 flex-shrink-0">
           <div>
             <span class="text-xs text-slate-400">可安全释放空间总量</span>
-            <div class="text-2xl font-bold font-mono text-rose-400 mt-0.5">
-              {{ garbageResult ? garbageResult.totalFormatted : '0.0 MB' }}
+            <div class="text-2xl font-bold font-mono text-rose-400 mt-0.5 flex items-center gap-2">
+              <span>{{ garbageResult ? garbageResult.totalFormatted : '0.0 MB' }}</span>
+              <span v-if="isGarbageScanning" class="text-xs font-normal text-rose-400/80 animate-pulse font-sans">(扫描中...)</span>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <button
               @click="handleScanGarbage"
               :disabled="isGarbageScanning"
-              class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all cursor-pointer border border-slate-700/50 flex items-center gap-1.5"
+              class="w-24 h-9 text-xs font-medium bg-slate-800 hover:bg-slate-700 disabled:opacity-75 text-slate-300 rounded-xl transition-colors cursor-pointer border border-slate-700/50 flex items-center justify-center gap-1.5 flex-shrink-0"
             >
-              <RotateCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isGarbageScanning }" />
-              <span>{{ isGarbageScanning ? '扫描中...' : '重新扫描' }}</span>
+              <RotateCw class="w-3.5 h-3.5 flex-shrink-0" :class="{ 'animate-spin': isGarbageScanning }" />
+              <span>{{ isGarbageScanning ? '扫描中' : '重新扫描' }}</span>
             </button>
           </div>
         </div>
 
-        <!-- Garbage Items List -->
-        <div class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[45vh]">
-          <div v-if="isGarbageScanning" class="text-center py-10 text-xs text-slate-400 flex items-center justify-center gap-2">
-            <Loader2 class="w-4 h-4 animate-spin text-rose-400" />
+        <!-- Garbage Items List (Completely stable, zero vertical shifting) -->
+        <div class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-0 relative">
+          <!-- Initial loading placeholder (only on first cold start without data) -->
+          <div v-if="isGarbageScanning && !garbageResult" class="h-full flex flex-col items-center justify-center py-10 text-xs text-slate-400 gap-2">
+            <Loader2 class="w-5 h-5 animate-spin text-rose-400" />
             <span>正在深度扫描 Windows Update 缓存与临时文件...</span>
           </div>
 
-          <div
-            v-else-if="garbageResult && garbageResult.items.length > 0"
-            v-for="item in garbageResult.items"
-            :key="item.path"
-            class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-slate-700/80 flex items-center justify-between gap-3 transition-colors"
-          >
-            <div class="min-w-0 flex-1 space-y-0.5">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-semibold text-slate-200">{{ item.name }}</span>
-                <span class="text-xs font-mono font-bold text-rose-400">{{ item.sizeFormatted }}</span>
+          <!-- Items list (kept rock-solid without layout changes) -->
+          <template v-else-if="garbageResult && garbageResult.items.length > 0">
+            <div
+              v-for="item in garbageResult.items"
+              :key="item.path"
+              class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-slate-700/80 flex items-center justify-between gap-3 transition-colors"
+            >
+              <div class="min-w-0 flex-1 space-y-0.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-semibold text-slate-200">{{ item.name }}</span>
+                  <span class="text-xs font-mono font-bold text-rose-400">{{ item.sizeFormatted }}</span>
+                </div>
+                <p class="text-[11px] text-slate-400">{{ item.description }}</p>
+                <p class="text-[10px] font-mono text-slate-600 truncate">{{ item.path }}</p>
               </div>
-              <p class="text-[11px] text-slate-400">{{ item.description }}</p>
-              <p class="text-[10px] font-mono text-slate-600 truncate">{{ item.path }}</p>
             </div>
-          </div>
+          </template>
 
-          <div v-else class="text-center py-10 text-xs text-slate-500">
+          <div v-else class="h-full flex items-center justify-center py-10 text-xs text-slate-500">
             ✅ C 盘非常干净，暂未发现可清理的遗留垃圾缓存
           </div>
         </div>
 
         <!-- Feedback Msg -->
-        <div v-if="garbageCleanMsg" class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono text-center">
+        <div v-if="garbageCleanMsg" class="p-2.5 mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono text-center flex-shrink-0">
           {{ garbageCleanMsg }}
         </div>
 
         <!-- Footer Action -->
-        <div class="border-t border-slate-800 pt-3 flex items-center justify-between">
+        <div class="border-t border-slate-800 pt-3 mt-3 flex items-center justify-between flex-shrink-0">
           <span class="text-xs text-slate-500 font-mono">
             {{ garbageResult ? `共发现 ${garbageResult.items.length} 处缓存目录` : '' }}
           </span>
           <button
             @click="handleCleanGarbage"
             :disabled="isGarbageCleaning || !garbageResult || garbageResult.totalBytes === 0"
-            class="px-5 py-2 text-xs font-medium bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-lg shadow-rose-600/20"
+            class="px-5 py-2 text-xs font-medium bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-lg shadow-rose-600/20"
           >
             <Trash2 class="w-3.5 h-3.5" :class="{ 'animate-spin': isGarbageCleaning }" />
             <span>{{ isGarbageCleaning ? '正在深度清理中...' : `立即安全清理 (${garbageResult ? garbageResult.totalFormatted : '0.0 MB'})` }}</span>
@@ -612,10 +615,9 @@
       v-if="activeModal === 'large_files'"
       class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
     >
-
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl p-6 shadow-2xl space-y-4 max-h-[88vh] flex flex-col">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-4xl h-[640px] max-h-[88vh] p-6 shadow-2xl space-y-4 flex flex-col">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
           <div class="flex items-center gap-2">
             <Database class="w-5 h-5 text-cyan-400" />
             <div>
