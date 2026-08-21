@@ -33,7 +33,7 @@
           class="flex items-center gap-2.5 text-blue-400 text-xs py-2 px-3 rounded-xl bg-blue-500/10 border border-blue-500/20 font-mono mt-2"
         >
           <Loader2 class="w-4 h-4 animate-spin text-blue-400 flex-shrink-0" />
-          <span class="animate-pulse font-medium">AI 正在深度思考与调度系统探针中...</span>
+          <span class="animate-pulse font-medium">{{ t('chat.thinking') }}</span>
         </div>
       </div>
 
@@ -45,7 +45,7 @@
       >
         <div class="flex items-center gap-1.5 font-semibold text-blue-300">
           <Lightbulb class="w-4 h-4 text-amber-400 flex-shrink-0" />
-          <span>AI 诊断总结与处置建议 (Executive Summary)</span>
+          <span>{{ t('chat.summaryTitle') }}</span>
         </div>
         <div class="text-slate-200 pl-5.5 space-y-1" v-html="renderMarkdown(message.summary)"></div>
       </div>
@@ -54,7 +54,7 @@
       <div v-if="message.actionCards && message.actionCards.length > 0" class="mt-4 space-y-2">
         <div class="text-xs font-medium text-slate-400 flex items-center gap-1 mb-1">
           <Sparkles class="w-3.5 h-3.5 text-blue-400" />
-          <span>AI 推荐处置方案：</span>
+          <span>{{ t('chat.actionPlanTitle') }}</span>
         </div>
         <ActionCard
           v-for="action in message.actionCards"
@@ -74,7 +74,7 @@
           class="flex items-center gap-1 text-[11px] text-slate-400 hover:text-blue-300 transition-colors py-0.5 cursor-pointer font-mono"
         >
           <ChevronRight class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-90': showProbeLogs }" />
-          <span>系统探针日志 ({{ message.diagnostics.length }})</span>
+          <span>{{ t('chat.probeLogs', message.diagnostics.length) }}</span>
         </button>
 
         <!-- 2. 查看与 AI 的完整交互日志 -->
@@ -84,7 +84,7 @@
           class="flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors py-0.5 cursor-pointer font-mono"
         >
           <Code class="w-3 h-3" />
-          <span>{{ showAiLogs ? '收起 AI 交互日志' : `查看 AI 通信与思考日志 (${message.aiDebugLogs.length})` }}</span>
+          <span>{{ showAiLogs ? t('chat.aiLogsClose') : t('chat.aiLogsOpen', message.aiDebugLogs.length) }}</span>
         </button>
       </div>
 
@@ -120,7 +120,7 @@
             </span>
             <span class="text-slate-500 text-[10px]">{{ debugLog.timestamp }}</span>
           </div>
-          <pre class="text-slate-300 whitespace-pre-wrap overflow-x-auto text-[10px] leading-relaxed bg-black/50 p-2 rounded border border-slate-800/80">{{ JSON.stringify(debugLog.payload, null, 2) }}</pre>
+          <pre class="text-slate-300 whitespace-pre-wrap overflow-x-auto text-[10px] leading-relaxed bg-black/50 p-2 rounded border border-slate-800/80">{{ typeof debugLog.payload === 'string' ? debugLog.payload : JSON.stringify(debugLog.payload, null, 2) }}</pre>
         </div>
       </div>
 
@@ -143,10 +143,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Bot, User, Loader2, ChevronRight, Terminal, Sparkles, Code, Lightbulb } from 'lucide-vue-next';
-
+import { useI18n } from '@/composables/useI18n';
 import { marked } from 'marked';
 import ActionCard from './ActionCard.vue';
 import type { ChatMessage, ActionCardData } from '@/types';
+
+const { t, locale } = useI18n();
 
 defineProps<{
   message: ChatMessage;

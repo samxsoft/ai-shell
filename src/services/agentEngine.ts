@@ -138,7 +138,7 @@ export const SYSTEM_PROBE_TOOLS = [
 
 
 
-const AGENT_SYSTEM_PROMPT = `
+export const AGENT_SYSTEM_PROMPT_ZH = `
 你是一款名为“AI-Shell 智能系统管家”的专业系统维护与排错 Agent。
 你的任务是协助普通电脑用户排查系统卡顿、内存不足、C 盘爆满、网络故障、端口冲突等问题。
 
@@ -165,6 +165,39 @@ const AGENT_SYSTEM_PROMPT = `
     "impactDescription": "将安全释放冲突端口",
     "expectedBenefit": "解除端口绑定冲突",
     "actionButtonText": "释放端口",
+    "details": { "pid": 1234, "port": 8080 }
+  }
+]
+<<<END_ACTION_CARDS>>>
+`;
+
+export const AGENT_SYSTEM_PROMPT_EN = `
+You are "AI-Shell", an intelligent desktop system maintenance, diagnostics, and troubleshooting AI Copilot.
+Your mission is to help users troubleshoot system bottlenecks, high memory consumption, full disk space, network connectivity errors, and port conflicts.
+
+[Core Execution Rules]
+1. When investigating system state, ALWAYS invoke native system probe tools via Function Calling (e.g. scan_listening_ports, check_port_occupancy, scan_system_garbage, scan_large_files, etc.).
+2. Do NOT output raw XML or DSML tags (such as <|DSML|... or <invoke...) in your final markdown message!
+3. Format all responses in clear, professional English Markdown with findings table, root causes, summary, and action cards:
+
+[Response Structure]
+## 🔍 Probe Telemetry & Diagnostics (Display telemetry, port, file or metric tables clearly)
+## 💡 Root Cause & Bottleneck Analysis (Explain what caused the issue)
+### 📋 Diagnostic Summary:
+- **Key Finding**: One-sentence clear finding.
+- **Recommendation**: One-sentence actionable guidance.
+
+If actionable remediation is required, append standardized Action Cards in the following format:
+<<<ACTION_CARDS>>>
+[
+  {
+    "id": "act-1",
+    "title": "Release Port Conflict",
+    "type": "kill_process",
+    "severity": "warning",
+    "impactDescription": "Safely terminate the conflicting process",
+    "expectedBenefit": "Release occupied network port",
+    "actionButtonText": "Release Port",
     "details": { "pid": 1234, "port": 8080 }
   }
 ]
@@ -217,8 +250,6 @@ async function executeProbeTool(toolName: string, args: any): Promise<{ result: 
       result = { error: `未知的探针工具: ${toolName}` };
     }
 
-
-
     const outputSnippet = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
     return {
       result,
@@ -247,14 +278,17 @@ export async function runAgentDiagnosis(
   userQuery: string,
   settings: UserSettings,
   onDiagnosticsUpdate: (logs: DiagnosticLog[]) => void,
-  onStreamContentUpdate: (content: string) => void
+  onStreamContentUpdate: (content: string) => void,
+  lang: 'zh-CN' | 'en-US' = 'zh-CN'
 ): Promise<{ finalContent: string; summary?: string; actionCards: ActionCardData[]; logs: DiagnosticLog[]; debugLogs: AiDebugLog[] }> {
 
   const logs: DiagnosticLog[] = [];
   const debugLogs: AiDebugLog[] = [];
+  const isEn = lang === 'en-US';
+  const systemPrompt = isEn ? AGENT_SYSTEM_PROMPT_EN : AGENT_SYSTEM_PROMPT_ZH;
 
   const conversation: ChatMessageParam[] = [
-    { role: 'system', content: AGENT_SYSTEM_PROMPT },
+    { role: 'system', content: systemPrompt },
     { role: 'user', content: userQuery },
   ];
 
@@ -268,7 +302,9 @@ export async function runAgentDiagnosis(
 
     // 记录请求日志
     debugLogs.push({
-      title: `第 ${iteration} 轮请求: 发送上下文与探针工具声明 (${settings.aiProvider} - ${settings.modelName})`,
+      title: isEn
+        ? `Round ${iteration} Request: Sending context and probe declarations (${settings.aiProvider} - ${settings.modelName})`
+        : `第 ${iteration} 轮请求: 发送上下文与探针工具声明 (${settings.aiProvider} - ${settings.modelName})`,
       type: 'request',
       timestamp: nowTime(),
       payload: {
@@ -279,7 +315,7 @@ export async function runAgentDiagnosis(
       },
     });
 
-    onStreamContentUpdate(`正在调度 AI 进行第 ${iteration} 轮全链路排查与推导...`);
+    onStreamContentUpdate(isEn ? `Scheduling AI diagnosis round ${iteration}...` : `正在调度 AI 进行第 ${iteration} 轮全链路排查与推导...`);
     const response = await sendChatCompletion(settings, conversation, SYSTEM_PROBE_TOOLS);
     const choice = response.choices?.[0];
 

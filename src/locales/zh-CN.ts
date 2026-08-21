@@ -113,6 +113,12 @@ export const zhCN = {
     actionFailed: '执行失败',
     dangerousAlert: '危险操作安全拦截',
     dangerousDesc: '该操作涉及关键系统组件或进程变更，请仔细确认后执行。',
+    thinking: 'AI 正在深度思考与调度系统探针中...',
+    summaryTitle: 'AI 诊断总结与处置建议 (Executive Summary)',
+    actionPlanTitle: 'AI 推荐处置方案：',
+    probeLogs: '系统探针日志 ({0})',
+    aiLogsOpen: '查看 AI 通信与思考日志 ({0})',
+    aiLogsClose: '收起 AI 交互日志',
   },
   toolbox: {
     title: '系统级诊断与运维快捷工具箱',

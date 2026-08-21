@@ -113,6 +113,12 @@ export const enUS = {
     actionFailed: 'Execution Failed',
     dangerousAlert: 'Safety Guardrail Triggered',
     dangerousDesc: 'This operation impacts system components or critical processes. Please verify carefully before proceeding.',
+    thinking: 'AI is analyzing telemetry and orchestrating system probes...',
+    summaryTitle: 'AI Diagnostic Summary & Recommendations (Executive Summary)',
+    actionPlanTitle: 'AI Recommended Action Plan:',
+    probeLogs: 'System Probe Logs ({0})',
+    aiLogsOpen: 'View AI Thought & Communication Logs ({0})',
+    aiLogsClose: 'Hide AI Interaction Logs',
   },
   toolbox: {
     title: 'System Diagnostic & DevOps Toolbox',
