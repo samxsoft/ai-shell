@@ -16,9 +16,19 @@
 
 </div>
 
+## 📥 Quick Download & Installation
+
+Download pre-compiled binaries directly from [GitHub Releases](https://github.com/samxsoft/ai-shell/releases/latest):
+
+| Platform | Format | Architecture | Download |
+| :--- | :--- | :--- | :--- |
+| 🪟 **Windows** | `.msi` installer / `.exe` portable | x86_64 | [Download for Windows](https://github.com/samxsoft/ai-shell/releases/latest) |
+| 🍎 **macOS** | `.dmg` installer | Universal (Apple Silicon & Intel) | [Download for macOS](https://github.com/samxsoft/ai-shell/releases/latest) |
+| 🐧 **Linux** | `.deb` / `.AppImage` | x86_64 | [Download for Linux](https://github.com/samxsoft/ai-shell/releases/latest) |
+
 ---
 
-## 📖 Overview
+## 📖 Overview & Mission
 
 **AI-Shell** is a next-generation desktop system diagnostics, maintenance, and optimization tool designed for developers, system administrators, and everyday computer users.
 
