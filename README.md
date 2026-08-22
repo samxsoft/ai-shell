@@ -74,31 +74,36 @@ All built-in tools are powered directly by low-level Rust probes without third-p
 
 ```mermaid
 graph TB
-    subgraph Frontend["Frontend (Vue 3 + TypeScript + Vite)"]
-        UI[Tailwind CSS & Glassmorphism UI]
-        I18N[i18n Localization Engine]
-        AgentChat[AI Agent Chat & Action Cards]
-        MonitorView[Hardware Telemetry Charts]
-        ToolboxView[8 System Tool Modals]
+    subgraph Frontend["Frontend: Vue 3 + TypeScript + Vite"]
+        UI["Tailwind CSS & Glassmorphism UI"]
+        I18N["i18n Localization Engine"]
+        AgentChat["AI Agent Chat & Action Cards"]
+        MonitorView["Hardware Telemetry Charts"]
+        ToolboxView["8 System Tool Modals"]
     end
 
     subgraph CoreBridge["Tauri v2 IPC Bridge"]
-        Invoke[IPC Commands / Tauri Core Invoke]
-        EventBus[Async Event Emitter & Listener]
+        Invoke["IPC Commands / Tauri Core Invoke"]
+        EventBus["Async Event Emitter & Listener"]
     end
 
-    subgraph Backend["Rust Native Engine (src-tauri)"]
-        SysProbe[Hardware & Process Probes (sysinfo)]
-        PortProbe[Netstat / Socket Inspector]
-        DiskScanner[Multi-threaded Large File & Junk Scanner]
-        NetDiagnoser[ICMP Ping / DNS Resolver / Winsock API]
-        AutostartMgr[Windows Registry / Startup Hook]
-        DockerClient[Docker Daemon Unix/Pipe API]
-        SafeGuard[Security Whitelist & Blacklist Guardrail]
+    subgraph Backend["Rust Native Engine: src-tauri"]
+        SysProbe["Hardware & Process Probes (sysinfo)"]
+        PortProbe["Netstat / Socket Inspector"]
+        DiskScanner["Multi-threaded Large File & Junk Scanner"]
+        NetDiagnoser["ICMP Ping / DNS Resolver / Winsock API"]
+        AutostartMgr["Windows Registry / Startup Hook"]
+        DockerClient["Docker Daemon Unix/Pipe API"]
+        SafeGuard["Security Whitelist & Blacklist Guardrail"]
     end
 
     UI --> Invoke
-    Invoke --> SysProbe & PortProbe & DiskScanner & NetDiagnoser & AutostartMgr & DockerClient
+    Invoke --> SysProbe
+    Invoke --> PortProbe
+    Invoke --> DiskScanner
+    Invoke --> NetDiagnoser
+    Invoke --> AutostartMgr
+    Invoke --> DockerClient
     SafeGuard -.-> SysProbe
 ```
 

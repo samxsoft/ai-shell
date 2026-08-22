@@ -76,31 +76,36 @@
 
 ```mermaid
 graph TB
-    subgraph 前端展示层["前端展示层 (Vue 3 + TypeScript + Vite)"]
-        UI[Tailwind CSS 流光美学界面]
-        I18N[i18n 响应式国际化引擎]
-        AgentChat[AI 对话排障与 ActionCard 审批]
-        MonitorView[硬件性能监控大屏]
-        ToolboxView[8 大原生工具交互弹窗]
+    subgraph Frontend["前端展示层: Vue 3 + TypeScript + Vite"]
+        UI["Tailwind CSS 流光美学界面"]
+        I18N["i18n 响应式国际化引擎"]
+        AgentChat["AI 对话排障与 ActionCard 审批"]
+        MonitorView["硬件性能监控大屏"]
+        ToolboxView["8 大原生工具交互弹窗"]
     end
 
-    subgraph 进程通信层["Tauri v2 IPC 核心通信桥"]
-        Invoke[IPC Commands / Tauri Core Invoke]
-        EventBus[异步事件监听与通知分发]
+    subgraph CoreBridge["Tauri v2 IPC 核心通信桥"]
+        Invoke["IPC Commands / Tauri Core Invoke"]
+        EventBus["异步事件监听与通知分发"]
     end
 
-    subgraph 核心引擎层["Rust 原生底层引擎 (src-tauri)"]
-        SysProbe[硬件与进程探针 (sysinfo)]
-        PortProbe[Netstat / 端口监听与释放]
-        DiskScanner[多线程大文件与垃圾扫描器]
-        NetDiagnoser[ICMP Ping / DNS 解析 / Winsock API]
-        AutostartMgr[Windows 注册表 / 自启项钩子]
-        DockerClient[Docker 守护进程 IPC 通信]
-        SafeGuard[安全白名单与危险指令拦截器]
+    subgraph Backend["Rust 原生底层引擎: src-tauri"]
+        SysProbe["硬件与进程探针 (sysinfo)"]
+        PortProbe["Netstat / 端口监听与释放"]
+        DiskScanner["多线程大文件与垃圾扫描器"]
+        NetDiagnoser["ICMP Ping / DNS 解析 / Winsock API"]
+        AutostartMgr["Windows 注册表 / 自启项钩子"]
+        DockerClient["Docker 守护进程 IPC 通信"]
+        SafeGuard["安全白名单与危险指令拦截器"]
     end
 
     UI --> Invoke
-    Invoke --> SysProbe & PortProbe & DiskScanner & NetDiagnoser & AutostartMgr & DockerClient
+    Invoke --> SysProbe
+    Invoke --> PortProbe
+    Invoke --> DiskScanner
+    Invoke --> NetDiagnoser
+    Invoke --> AutostartMgr
+    Invoke --> DockerClient
     SafeGuard -.-> SysProbe
 ```
 
