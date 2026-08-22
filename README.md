@@ -20,11 +20,11 @@
 
 Download pre-compiled binaries directly from [GitHub Releases](https://github.com/samxsoft/ai-shell/releases/latest):
 
-| Platform | Format | Architecture | Download |
+| Platform | Package Format | Architecture | Status / Download |
 | :--- | :--- | :--- | :--- |
-| 🪟 **Windows** | `.msi` installer / `.exe` portable | x86_64 | [Download for Windows](https://github.com/samxsoft/ai-shell/releases/latest) |
-| 🍎 **macOS** | `.dmg` installer | Universal (Apple Silicon & Intel) | [Download for macOS](https://github.com/samxsoft/ai-shell/releases/latest) |
-| 🐧 **Linux** | `.deb` / `.AppImage` | x86_64 | [Download for Linux](https://github.com/samxsoft/ai-shell/releases/latest) |
+| 🪟 **Windows 10 / 11** | `.msi` setup / `.exe` portable | x86_64 | [👉 Download Windows Release](https://github.com/samxsoft/ai-shell/releases/latest) |
+| 🍎 **macOS** | `.dmg` installer | Universal | *Planned for upcoming release* |
+| 🐧 **Linux** | `.deb` / `.AppImage` | x86_64 | *Planned for upcoming release* |
 
 ---
 

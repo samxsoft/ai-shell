@@ -20,11 +20,11 @@
 
 前往 [GitHub Releases](https://github.com/samxsoft/ai-shell/releases/latest) 直接获取最新预编译安装包：
 
-| 平台 (Platform) | 安装包格式 (Package) | 架构 (Arch) | 下载入口 |
+| 平台 (Platform) | 安装包格式 (Package) | 架构 (Arch) | 状态 / 下载入口 |
 | :--- | :--- | :--- | :--- |
-| 🪟 **Windows** | `.msi` 安装包 / `.exe` 绿色免安装 | x86_64 | [点击下载 Windows 版](https://github.com/samxsoft/ai-shell/releases/latest) |
-| 🍎 **macOS** | `.dmg` 镜像安装包 | Universal (M1/M2/M3 & Intel) | [点击下载 macOS 版](https://github.com/samxsoft/ai-shell/releases/latest) |
-| 🐧 **Linux** | `.deb` 包 / `.AppImage` | x86_64 | [点击下载 Linux 版](https://github.com/samxsoft/ai-shell/releases/latest) |
+| 🪟 **Windows 10 / 11** | `.msi` 安装向导 / `.exe` 便携版 | x86_64 | [👉 点击前往下载 Windows 最新版](https://github.com/samxsoft/ai-shell/releases/latest) |
+| 🍎 **macOS** | `.dmg` 镜像安装包 | Universal | *后续版本规划中* |
+| 🐧 **Linux** | `.deb` / `.AppImage` | x86_64 | *后续版本规划中* |
 
 ---
 
