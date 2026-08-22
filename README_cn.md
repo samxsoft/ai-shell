@@ -179,8 +179,8 @@ yarn tauri build
 
 | 微信赞赏 (WeChat Pay) | 比特币捐赠 (Bitcoin BTC) |
 | :---: | :---: |
-| <img src="docs/images/wechat_pay_qr.svg" width="220" alt="微信赞赏码" /> | <img src="docs/images/bitcoin_qr.svg" width="220" alt="Bitcoin 收款码" /> |
-| **扫码请作者喝杯咖啡 ☕** | `bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh` |
+| <img src="docs/images/wechat_pay_qr.png" width="220" alt="微信赞赏码" /> | <img src="docs/images/bitcoin_qr.png" width="220" alt="Bitcoin 收款码" /> |
+| **扫码请作者喝杯咖啡 ☕** | `bc1qjtp3t7pq3tl8pdwwdvezhnglkh023dx3g80lk0` |
 
 </div>
 
@@ -221,5 +221,5 @@ yarn tauri build
 - 💼 **商业授权咨询**：如需获取企业商业授权、专属定制开发或深度业务合作，请通过 GitHub 仓库或 Issues 与作者取得联系。
 
 <div align="center">
-  <sub>Built with ❤️ by Tristan Yu using Tauri, Rust & Vue.</sub>
+  <sub>Built with ❤️ by tr1st0n yu using Tauri, Rust & Vue.</sub>
 </div>

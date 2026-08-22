@@ -177,8 +177,8 @@ If **AI-Shell** has helped you save time, clean up disk space, or diagnose trick
 
 | 微信赞赏 (WeChat Pay) | 比特币捐赠 (Bitcoin BTC) |
 | :---: | :---: |
-| <img src="docs/images/wechat_pay_qr.svg" width="220" alt="WeChat Pay" /> | <img src="docs/images/bitcoin_qr.svg" width="220" alt="Bitcoin" /> |
-| **扫码支持作者一杯咖啡 ☕** | `bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh` |
+| <img src="docs/images/wechat_pay_qr.png" width="220" alt="WeChat Pay" /> | <img src="docs/images/bitcoin_qr.png" width="220" alt="Bitcoin" /> |
+| **扫码支持作者一杯咖啡 ☕** | `bc1qjtp3t7pq3tl8pdwwdvezhnglkh023dx3g80lk0` |
 
 </div>
 
@@ -220,5 +220,5 @@ This project is licensed under the **PolyForm Noncommercial License 1.0.0** - se
 - 💼 **Commercial Licensing**: For enterprise licensing, OEM distribution, or commercial integration inquiries, please contact the repository owner.
 
 <div align="center">
-  <sub>Built with ❤️ by Tristan Yu using Tauri, Rust & Vue.</sub>
+  <sub>Built with ❤️ by tr1st0n yu using Tauri, Rust & Vue.</sub>
 </div>
