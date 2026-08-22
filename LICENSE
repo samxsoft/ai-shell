@@ -1,0 +1,30 @@
+# PolyForm Noncommercial License 1.0.0
+
+Copyright (c) 2026 Tristan Yu (samxsoft). All rights reserved.
+
+https://polyformproject.org/licenses/noncommercial/1.0.0/
+
+## 1. Noncommercial License Grant
+Subject to the terms and conditions of this License, the Copyright Holder grants you a worldwide, royalty-free, non-exclusive, non-transferable copyright license to use, reproduce, modify, display, and distribute this Software for **Noncommercial Purposes only**.
+
+## 2. Permitted Uses (Personal & Noncommercial)
+Under this License, you may:
+- Download, install, and run this Software on personal devices for personal use, learning, study, or research.
+- Modify the source code for personal, educational, or experimental noncommercial use.
+- Distribute unmodified or modified copies of this Software free of charge for noncommercial purposes, provided that this copyright notice and permission notice are included in all copies.
+
+## 3. Commercial Use Prohibited
+**Commercial Use is STRICTLY PROHIBITED without a separate commercial license agreement.**
+You may NOT, without prior written authorization from the Copyright Holder:
+- Sell, license, rent, lease, or monetize this Software or any part of its source code/binaries.
+- Integrate this Software into any commercial products, proprietary software, cloud platforms, or commercial SaaS/PaaS offerings.
+- Use this Software within commercial entities, enterprises, or profit-generating business operations.
+- Provide commercial technical support, hosted instances, or paid services based on this Software.
+
+## 4. Commercial Licensing Inquiries
+For commercial licensing, enterprise deployment, proprietary integration, or OEM distribution inquiries, please contact the author via GitHub or email:
+- **GitHub**: https://github.com/samxsoft/ai-shell
+- **Email**: contact the repository owner via GitHub Issues or author profile.
+
+## 5. Disclaimer of Warranty
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
