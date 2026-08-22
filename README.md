@@ -14,6 +14,10 @@
 
 [English](README.md) | [简体中文](README_cn.md)
 
+<br />
+
+<img src="docs/images/demo.gif" alt="AI-Shell Core Demo Walkthrough" width="880" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);" />
+
 </div>
 
 ## 📥 Quick Download & Installation
