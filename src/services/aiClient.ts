@@ -38,11 +38,64 @@ export async function sendChatCompletion(
   tools?: any[],
   onChunk?: (chunk: string) => void
 ): Promise<ChatCompletionResponse> {
-  // 1. 如果用户选择 Rust 原生内置推理引擎 (Phase 2 & Phase 3)
+  // 1. 如果用户选择 Rust 原生内置推理引擎 (Phase 2, 3, 4: Multi-Round ReAct Autonomous Agent)
   if (settings.aiProvider === 'local_embedded') {
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || 'System diagnostic check';
     const sysMsg = messages.find((m) => m.role === 'system')?.content || '';
+    const hasToolResult = messages.some((m) => m.role === 'tool');
 
+    // 🌟 第 1 轮：如果提供了工具声明且尚未执行探针工具，发起 Autonomous Tool Call
+    if (tools && tools.length > 0 && !hasToolResult) {
+      const qLower = lastUserMsg.toLowerCase();
+      let targetTool = 'get_system_metrics';
+      let toolArgs: any = {};
+
+      if (qLower.includes('端口') || qLower.includes('port') || qLower.includes('8080') || qLower.includes('3000')) {
+        const portMatch = lastUserMsg.match(/\b\d{2,5}\b/);
+        targetTool = 'check_port_occupancy';
+        toolArgs = { port: portMatch ? Number(portMatch[0]) : 8080 };
+      } else if (qLower.includes('c盘') || qLower.includes('垃圾') || qLower.includes('clean') || qLower.includes('disk') || qLower.includes('瘦身')) {
+        targetTool = 'scan_system_garbage';
+      } else if (qLower.includes('网络') || qLower.includes('dns') || qLower.includes('网页') || qLower.includes('network') || qLower.includes('ping')) {
+        targetTool = 'diagnose_network_health';
+      } else if (qLower.includes('docker') || qLower.includes('容器') || qLower.includes('镜像')) {
+        targetTool = 'scan_docker_environment';
+      } else if (qLower.includes('自启') || qLower.includes('开机') || qLower.includes('启动') || qLower.includes('autostart') || qLower.includes('boot')) {
+        targetTool = 'get_autostart_entries';
+      } else if (qLower.includes('大文件') || qLower.includes('large')) {
+        targetTool = 'scan_large_files';
+        toolArgs = { minSizeMb: 500 };
+      } else {
+        targetTool = 'get_system_metrics';
+      }
+
+      const callId = `call_${Date.now()}`;
+      return {
+        id: `local-react-round1-${Date.now()}`,
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: `正在调度系统底层探针 \`${targetTool}\` 进行状态采样与深度排查...`,
+              tool_calls: [
+                {
+                  id: callId,
+                  type: 'function',
+                  function: {
+                    name: targetTool,
+                    arguments: JSON.stringify(toolArgs),
+                  },
+                },
+              ],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+      };
+    }
+
+    // 🌟 第 2 轮：已获取探针真实执行结果，发起本地流式排障推导与 ActionCard 生成
     return new Promise(async (resolve, reject) => {
       let accumulated = '';
       let unlisten: (() => void) | null = null;
