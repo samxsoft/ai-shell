@@ -61,11 +61,15 @@ export async function sendChatCompletion(
         || qLower.includes('overview');
 
       if (isFullCheck) {
-        // 全系统深度体检：并发调度 4 大核心维度探针
+        // 全系统深度体检：并发调度全量 8 大核心维度系统探针矩阵
         toolCallList.push({ name: 'get_system_metrics', args: {} });
-        toolCallList.push({ name: 'get_process_list', args: { limit: 5 } });
+        toolCallList.push({ name: 'get_process_list', args: { limit: 10 } });
         toolCallList.push({ name: 'scan_system_garbage', args: {} });
         toolCallList.push({ name: 'diagnose_network_health', args: {} });
+        toolCallList.push({ name: 'get_autostart_entries', args: {} });
+        toolCallList.push({ name: 'scan_large_files', args: { minSizeMb: 500 } });
+        toolCallList.push({ name: 'scan_docker_environment', args: {} });
+        toolCallList.push({ name: 'scan_listening_ports', args: {} });
       } else if (qLower.includes('端口') || qLower.includes('port') || qLower.includes('8080') || qLower.includes('3000')) {
         const portMatch = lastUserMsg.match(/\b\d{2,5}\b/);
         const port = portMatch ? Number(portMatch[0]) : 8080;
