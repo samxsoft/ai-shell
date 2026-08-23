@@ -144,38 +144,18 @@
       </div>
     </div>
 
-    <!-- Local GGUF Model Hub Section (With smart visual linkage to embedded engine) -->
+    <!-- Local GGUF Model Hub Section (Only shown when AI-Shell embedded engine is selected) -->
     <div
-      class="p-5 rounded-2xl transition-all space-y-4"
-      :class="settings.aiProvider === 'local_embedded' ? 'bg-slate-900/90 border-2 border-emerald-500/40 shadow-lg shadow-emerald-950/20' : 'bg-slate-900/80 border border-slate-800'"
+      v-if="settings.aiProvider === 'local_embedded'"
+      class="p-5 rounded-2xl transition-all space-y-4 bg-slate-900/90 border border-emerald-500/40 shadow-lg shadow-emerald-950/20 animate-in fade-in duration-200"
     >
-      <!-- Dedicated Notice Banner when not on local_embedded -->
-      <div
-        v-if="settings.aiProvider !== 'local_embedded'"
-        class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 text-xs text-slate-400 flex items-center justify-between gap-2"
-      >
-        <span class="truncate">{{ t('settings.modelHub.dedicatedNotice') }}</span>
-        <button
-          @click="switchProvider('local_embedded')"
-          class="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer flex-shrink-0"
-        >
-          切至内置引擎
-        </button>
-      </div>
-
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2 flex-wrap">
             <Box class="w-4 h-4 text-emerald-400" />
             <span>{{ t('settings.modelHub.title') }}</span>
-            <span
-              v-if="settings.aiProvider === 'local_embedded'"
-              class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-medium"
-            >
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-medium">
               {{ t('settings.modelHub.dedicatedActiveTag') }}
-            </span>
-            <span v-else class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono">
-              GGUF & OpenWALDO
             </span>
           </h3>
           <p class="text-xs text-slate-400 mt-0.5">{{ t('settings.modelHub.subtitle') }}</p>
