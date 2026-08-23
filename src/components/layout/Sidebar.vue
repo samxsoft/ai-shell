@@ -179,6 +179,11 @@ const providerConfigs = {
     badge: 'True Open AI',
     badgeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40 shadow-sm shadow-emerald-500/20',
   },
+  local_embedded: {
+    name: 'Rust Embedded',
+    badge: '100% Offline GGUF',
+    badgeClass: 'bg-teal-500/15 text-teal-300 border-teal-500/40 shadow-sm shadow-teal-500/20',
+  },
 };
 
 const activeProviderInfo = computed(() => {

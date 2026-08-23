@@ -195,7 +195,7 @@ export interface ToolboxItem {
 }
 
 export interface UserSettings {
-  aiProvider: 'deepseek' | 'openai' | 'claude' | 'qwen' | 'ollama' | 'openwaldo';
+  aiProvider: 'deepseek' | 'openai' | 'claude' | 'qwen' | 'ollama' | 'openwaldo' | 'local_embedded';
   apiKey: string;
   apiEndpoint: string;
   modelName: string;

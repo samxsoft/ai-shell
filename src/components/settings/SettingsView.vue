@@ -199,12 +199,35 @@
                 <span>{{ t('settings.modelHub.btnCancel') }}</span>
               </button>
 
-              <!-- Downloaded Status & Set Active / Delete Buttons -->
+              <!-- Downloaded Status & Set Active / In-Memory Load / Delete Buttons -->
               <template v-else-if="model.status === 'downloaded'">
+                <!-- Load / Unload from RAM -->
+                <button
+                  v-if="engineStatus.modelId === model.id"
+                  @click="unloadModel"
+                  class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/20 hover:bg-rose-500/20 text-emerald-300 hover:text-rose-300 border border-emerald-500/40 hover:border-rose-500/40 flex items-center gap-1 transition-all cursor-pointer shadow-sm shadow-emerald-500/10"
+                  :title="t('settings.modelHub.btnUnloadRam')"
+                >
+                  <Cpu class="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{{ t('settings.modelHub.ramLoadedTag') }}</span>
+                </button>
+
+                <button
+                  v-else
+                  @click="handleLoadModelToRam(model.id)"
+                  :disabled="isLoadingInference"
+                  class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-900 hover:bg-emerald-950/60 text-slate-300 hover:text-emerald-300 border border-slate-700 hover:border-emerald-500/50 flex items-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                  :title="t('settings.modelHub.btnLoadToRam')"
+                >
+                  <Loader2 v-if="isLoadingInference && targetLoadingId === model.id" class="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                  <Cpu v-else class="w-3.5 h-3.5 text-slate-400" />
+                  <span>{{ t('settings.modelHub.btnLoadToRam') }}</span>
+                </button>
+
                 <button
                   v-if="!model.isActive"
                   @click="setActiveModel(model.id)"
-                  class="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 hover:border-emerald-500/50 flex items-center gap-1 transition-all cursor-pointer"
+                  class="px-2 py-1 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 hover:border-emerald-500/50 flex items-center gap-1 transition-all cursor-pointer"
                 >
                   <CheckCircle2 class="w-3.5 h-3.5 text-slate-400" />
                   <span>{{ t('settings.modelHub.btnSetActive') }}</span>
@@ -443,6 +466,7 @@ import { useSettings } from '@/composables/useSettings';
 import { useAppInfo } from '@/composables/useAppInfo';
 import { useI18n } from '@/composables/useI18n';
 import { useModelHub } from '@/composables/useModelHub';
+import { useInferenceEngine } from '@/composables/useInferenceEngine';
 import { testAiConnection } from '@/services/aiClient';
 
 const { settings, switchProvider, hasConfiguredApiKey, setTheme, setLanguage } = useSettings();
@@ -458,6 +482,23 @@ const {
   setActiveModel,
   openModelsFolder,
 } = useModelHub();
+
+const {
+  engineStatus,
+  isLoading: isLoadingInference,
+  loadModel,
+  unloadModel,
+} = useInferenceEngine();
+
+const targetLoadingId = ref<string | null>(null);
+
+const handleLoadModelToRam = async (modelId: string) => {
+  targetLoadingId.value = modelId;
+  await loadModel(modelId);
+  await setActiveModel(modelId);
+  switchProvider('local_embedded');
+  targetLoadingId.value = null;
+};
 
 const isTesting = ref(false);
 const testSuccess = ref(false);
@@ -531,16 +572,22 @@ const providers = computed(() => [
     desc: t('settings.providers.deepseek.desc'),
   },
   {
-    id: 'ollama',
-    name: t('settings.providers.ollama.name'),
-    tag: t('settings.providers.ollama.tag'),
-    desc: t('settings.providers.ollama.desc'),
+    id: 'local_embedded',
+    name: t('settings.providers.local_embedded.name'),
+    tag: t('settings.providers.local_embedded.tag'),
+    desc: t('settings.providers.local_embedded.desc'),
   },
   {
     id: 'openwaldo',
     name: t('settings.providers.openwaldo.name'),
     tag: t('settings.providers.openwaldo.tag'),
     desc: t('settings.providers.openwaldo.desc'),
+  },
+  {
+    id: 'ollama',
+    name: t('settings.providers.ollama.name'),
+    tag: t('settings.providers.ollama.tag'),
+    desc: t('settings.providers.ollama.desc'),
   },
   {
     id: 'qwen',

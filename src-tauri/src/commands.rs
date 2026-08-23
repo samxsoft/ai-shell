@@ -237,6 +237,52 @@ pub fn open_models_folder() -> Result<String, String> {
     crate::model_manager::open_models_folder()
 }
 
+// -------------------------------------------------------------
+// Embedded Rust Inference Engine Commands (Phase 2)
+// -------------------------------------------------------------
+
+#[tauri::command]
+pub async fn load_local_model(
+    state: tauri::State<'_, crate::inference_engine::InferenceEngineState>,
+    model_id: String,
+) -> Result<crate::inference_engine::InferenceStatus, String> {
+    crate::inference_engine::load_model(&state, model_id).await
+}
+
+#[tauri::command]
+pub async fn unload_local_model(
+    state: tauri::State<'_, crate::inference_engine::InferenceEngineState>,
+) -> Result<crate::inference_engine::InferenceStatus, String> {
+    crate::inference_engine::unload_model(&state).await
+}
+
+#[tauri::command]
+pub async fn get_local_inference_status(
+    state: tauri::State<'_, crate::inference_engine::InferenceEngineState>,
+) -> Result<crate::inference_engine::InferenceStatus, String> {
+    Ok(crate::inference_engine::get_inference_status(&state).await)
+}
+
+#[tauri::command]
+pub async fn stream_local_completion(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, crate::inference_engine::InferenceEngineState>,
+    prompt: String,
+    system_prompt: Option<String>,
+    max_tokens: Option<usize>,
+    temperature: Option<f32>,
+) -> Result<String, String> {
+    crate::inference_engine::stream_completion(app, &state, prompt, system_prompt, max_tokens, temperature).await
+}
+
+#[tauri::command]
+pub fn abort_local_completion(
+    state: tauri::State<'_, crate::inference_engine::InferenceEngineState>,
+) -> Result<String, String> {
+    crate::inference_engine::abort_generation(&state)
+}
+
+
 
 
 

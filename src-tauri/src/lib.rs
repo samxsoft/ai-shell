@@ -1,9 +1,11 @@
 pub mod commands;
+pub mod inference_engine;
 pub mod model_manager;
 pub mod models;
 pub mod probe;
 pub mod tray;
 
+use inference_engine::InferenceEngineState;
 use model_manager::ModelManagerState;
 use probe::ProbeState;
 
@@ -13,6 +15,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(ProbeState::new())
         .manage(ModelManagerState::new())
+        .manage(InferenceEngineState::new())
         .setup(|app| {
             // 初始化系统托盘图标
             tray::create_tray(app.handle())?;
@@ -59,6 +62,12 @@ pub fn run() {
             commands::delete_local_model,
             commands::set_active_local_model,
             commands::open_models_folder,
+            // Embedded Inference Engine commands (Phase 2)
+            commands::load_local_model,
+            commands::unload_local_model,
+            commands::get_local_inference_status,
+            commands::stream_local_completion,
+            commands::abort_local_completion,
         ])
 
 

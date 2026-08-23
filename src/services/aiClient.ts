@@ -1,4 +1,6 @@
 import type { UserSettings } from '@/types';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 
 export interface ChatMessageParam {
   role: 'system' | 'user' | 'assistant' | 'tool';
@@ -28,13 +30,64 @@ export interface ChatCompletionResponse {
 }
 
 /**
- * 统一 OpenAI Compatible 大模型请求客户端
+ * 统一大模型请求客户端（支持云端 OpenAI 兼容 API & 本地 Rust 内置推理引擎）
  */
 export async function sendChatCompletion(
   settings: UserSettings,
   messages: ChatMessageParam[],
   tools?: any[]
 ): Promise<ChatCompletionResponse> {
+  // 1. 如果用户选择 Rust 原生内置推理引擎 (Phase 2)
+  if (settings.aiProvider === 'local_embedded') {
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || 'System diagnostic check';
+    const sysMsg = messages.find((m) => m.role === 'system')?.content || '';
+
+    return new Promise(async (resolve, reject) => {
+      let accumulated = '';
+      let unlisten: (() => void) | null = null;
+
+      try {
+        unlisten = await listen<any>('local_token_stream', (evt) => {
+          const payload = evt.payload;
+          if (payload.token) {
+            accumulated += payload.token;
+          }
+          if (payload.isFinished) {
+            if (unlisten) unlisten();
+            resolve({
+              id: `local-gguf-${Date.now()}`,
+              choices: [
+                {
+                  index: 0,
+                  message: {
+                    role: 'assistant',
+                    content: accumulated,
+                  },
+                  finish_reason: 'stop',
+                },
+              ],
+            });
+          }
+          if (payload.error) {
+            if (unlisten) unlisten();
+            reject(new Error(payload.error));
+          }
+        });
+
+        await invoke('stream_local_completion', {
+          prompt: lastUserMsg,
+          systemPrompt: sysMsg,
+          maxTokens: 2048,
+          temperature: 0.7,
+        });
+      } catch (err) {
+        if (unlisten) unlisten();
+        reject(err);
+      }
+    });
+  }
+
+  // 2. 传统云端 API / 本地外部 Ollama
   const endpoint = settings.apiEndpoint.replace(/\/+$/, '');
   const url = `${endpoint}/chat/completions`;
 
@@ -77,6 +130,16 @@ export async function sendChatCompletion(
 export async function testAiConnection(settings: UserSettings): Promise<{ success: boolean; latencyMs: number; message: string }> {
   const startTime = Date.now();
   try {
+    if (settings.aiProvider === 'local_embedded') {
+      const status = await invoke<any>('get_local_inference_status');
+      const latencyMs = Date.now() - startTime;
+      return {
+        success: true,
+        latencyMs,
+        message: `Rust 内置引擎就绪! 状态: ${status?.status || 'ready'}, 硬件加速: ${status?.deviceType || 'CPU AVX2'}, 内存: ${status?.ramUsedMb || 0}MB`,
+      };
+    }
+
     const res = await sendChatCompletion(
       settings,
       [
@@ -101,3 +164,4 @@ export async function testAiConnection(settings: UserSettings): Promise<{ succes
     };
   }
 }
+
