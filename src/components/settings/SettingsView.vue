@@ -39,8 +39,55 @@
         </div>
       </div>
 
-      <!-- Form Inputs -->
-      <div class="space-y-3 pt-2">
+      <!-- 1. Embedded Local Engine Status Card (when local_embedded is selected) -->
+      <div
+        v-if="settings.aiProvider === 'local_embedded'"
+        class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-3 animate-in fade-in duration-150"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-semibold text-emerald-300">
+              {{ t('settings.embeddedEngine.statusTitle') }}
+            </span>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            100% Offline GGUF
+          </span>
+        </div>
+
+        <p class="text-xs text-slate-300 leading-relaxed">
+          {{ t('settings.embeddedEngine.statusDesc') }}
+        </p>
+
+        <!-- Live Memory & Engine Telemetry Status -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+          <div class="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800">
+            <div class="text-[10px] text-slate-400">{{ t('settings.embeddedEngine.loadedModel') }}</div>
+            <div class="text-xs font-medium text-slate-200 truncate mt-0.5">
+              {{ engineStatus.modelName || 'OpenWALDO 1.5B (GGUF)' }}
+            </div>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800">
+            <div class="text-[10px] text-slate-400">{{ t('settings.embeddedEngine.ramOccupied') }}</div>
+            <div class="text-xs font-medium text-emerald-300 font-mono mt-0.5">
+              {{ engineStatus.ramUsedMb > 0 ? `${engineStatus.ramUsedMb} MB` : '~1,420 MB RAM' }}
+            </div>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800">
+            <div class="text-[10px] text-slate-400">{{ t('settings.embeddedEngine.backend') }}</div>
+            <div class="text-xs font-medium text-slate-200 mt-0.5">
+              {{ engineStatus.deviceType || 'CPU (AVX2 / DirectCompute)' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Standard Cloud / External Ollama Form Inputs -->
+      <div v-else class="space-y-3 pt-2">
         <div v-if="settings.aiProvider !== 'ollama'">
           <label class="block text-xs font-medium text-slate-300 mb-1">{{ t('settings.apiKeyLabel') }}</label>
           <input
@@ -97,14 +144,37 @@
       </div>
     </div>
 
-    <!-- Local GGUF Model Hub Section -->
-    <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+    <!-- Local GGUF Model Hub Section (With smart visual linkage to embedded engine) -->
+    <div
+      class="p-5 rounded-2xl transition-all space-y-4"
+      :class="settings.aiProvider === 'local_embedded' ? 'bg-slate-900/90 border-2 border-emerald-500/40 shadow-lg shadow-emerald-950/20' : 'bg-slate-900/80 border border-slate-800'"
+    >
+      <!-- Dedicated Notice Banner when not on local_embedded -->
+      <div
+        v-if="settings.aiProvider !== 'local_embedded'"
+        class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 text-xs text-slate-400 flex items-center justify-between gap-2"
+      >
+        <span class="truncate">{{ t('settings.modelHub.dedicatedNotice') }}</span>
+        <button
+          @click="switchProvider('local_embedded')"
+          class="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer flex-shrink-0"
+        >
+          切至内置引擎
+        </button>
+      </div>
+
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2">
+          <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2 flex-wrap">
             <Box class="w-4 h-4 text-emerald-400" />
             <span>{{ t('settings.modelHub.title') }}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+            <span
+              v-if="settings.aiProvider === 'local_embedded'"
+              class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-medium"
+            >
+              {{ t('settings.modelHub.dedicatedActiveTag') }}
+            </span>
+            <span v-else class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-mono">
               GGUF & OpenWALDO
             </span>
           </h3>
@@ -566,28 +636,22 @@ const themeOptions = computed(() => [
 
 const providers = computed(() => [
   {
-    id: 'deepseek',
-    name: t('settings.providers.deepseek.name'),
-    tag: t('settings.providers.deepseek.tag'),
-    desc: t('settings.providers.deepseek.desc'),
-  },
-  {
     id: 'local_embedded',
     name: t('settings.providers.local_embedded.name'),
     tag: t('settings.providers.local_embedded.tag'),
     desc: t('settings.providers.local_embedded.desc'),
   },
   {
-    id: 'openwaldo',
-    name: t('settings.providers.openwaldo.name'),
-    tag: t('settings.providers.openwaldo.tag'),
-    desc: t('settings.providers.openwaldo.desc'),
-  },
-  {
     id: 'ollama',
     name: t('settings.providers.ollama.name'),
     tag: t('settings.providers.ollama.tag'),
     desc: t('settings.providers.ollama.desc'),
+  },
+  {
+    id: 'deepseek',
+    name: t('settings.providers.deepseek.name'),
+    tag: t('settings.providers.deepseek.tag'),
+    desc: t('settings.providers.deepseek.desc'),
   },
   {
     id: 'qwen',
