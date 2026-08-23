@@ -24,13 +24,17 @@
 
       <div v-else class="leading-relaxed min-w-0">
         <template v-if="message.content">
-          <div class="markdown-body min-w-0" v-html="renderMarkdown(message.content)"></div>
+          <div class="markdown-body min-w-0 inline leading-relaxed" v-html="renderMarkdown(message.content)"></div>
+          <span
+            v-if="message.isStreaming"
+            class="inline-block w-1.5 h-4 bg-blue-400 dark:bg-teal-400 animate-pulse ml-1 align-middle rounded-sm shadow-sm shadow-blue-400/50"
+          ></span>
         </template>
         
-        <!-- Streaming Thinking Indicator & Spinner -->
+        <!-- Streaming Thinking Indicator & Spinner (only when waiting for first token) -->
         <div
-          v-if="message.isStreaming"
-          class="flex items-center gap-2.5 text-blue-400 text-xs py-2 px-3 rounded-xl bg-blue-500/10 border border-blue-500/20 font-mono mt-2"
+          v-if="message.isStreaming && !message.content"
+          class="flex items-center gap-2.5 text-blue-400 text-xs py-2 px-3 rounded-xl bg-blue-500/10 border border-blue-500/20 font-mono mt-1"
         >
           <Loader2 class="w-4 h-4 animate-spin text-blue-400 flex-shrink-0" />
           <span class="animate-pulse font-medium">{{ t('chat.thinking') }}</span>

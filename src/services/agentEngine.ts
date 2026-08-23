@@ -315,8 +315,14 @@ export async function runAgentDiagnosis(
       },
     });
 
-    onStreamContentUpdate(isEn ? `Scheduling AI diagnosis round ${iteration}...` : `正在调度 AI 进行第 ${iteration} 轮全链路排查与推导...`);
-    const response = await sendChatCompletion(settings, conversation, SYSTEM_PROBE_TOOLS);
+    const response = await sendChatCompletion(
+      settings,
+      conversation,
+      SYSTEM_PROBE_TOOLS,
+      (chunk) => {
+        onStreamContentUpdate(chunk);
+      }
+    );
     const choice = response.choices?.[0];
 
     if (!choice) {

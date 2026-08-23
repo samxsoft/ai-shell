@@ -102,7 +102,9 @@ export function useSettings() {
   };
 
   const hasConfiguredApiKey = () => {
-    if (settings.aiProvider === 'ollama') return true;
+    if (settings.aiProvider === 'ollama' || settings.aiProvider === 'local_embedded' || settings.aiProvider === 'openwaldo') {
+      return true;
+    }
     return Boolean(settings.apiKey && settings.apiKey.trim().length > 5);
   };
 

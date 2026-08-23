@@ -35,9 +35,10 @@ export interface ChatCompletionResponse {
 export async function sendChatCompletion(
   settings: UserSettings,
   messages: ChatMessageParam[],
-  tools?: any[]
+  tools?: any[],
+  onChunk?: (chunk: string) => void
 ): Promise<ChatCompletionResponse> {
-  // 1. 如果用户选择 Rust 原生内置推理引擎 (Phase 2)
+  // 1. 如果用户选择 Rust 原生内置推理引擎 (Phase 2 & Phase 3)
   if (settings.aiProvider === 'local_embedded') {
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')?.content || 'System diagnostic check';
     const sysMsg = messages.find((m) => m.role === 'system')?.content || '';
@@ -51,6 +52,9 @@ export async function sendChatCompletion(
           const payload = evt.payload;
           if (payload.token) {
             accumulated += payload.token;
+            if (onChunk) {
+              onChunk(accumulated);
+            }
           }
           if (payload.isFinished) {
             if (unlisten) unlisten();
