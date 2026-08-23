@@ -204,11 +204,13 @@ If **AI-Shell** has helped you save time, clean up disk space, or diagnose trick
 - [x] Real-time CPU, RAM, Disk, and Network telemetry monitoring
 - [x] AI agent with conversational diagnosis and executable Action Cards
 - [x] 8 Native Rust-powered system diagnostic & repair tools
+- [x] Local GGUF Model Hub (Rust multi-threaded streaming downloader with ETA/speed for 0.5B/1.5B/3B models)
+- [x] OpenWALDO True Open Source AI integration & provider preset
 - [x] 100% full multi-language (i18n) support (zh-CN & en-US)
 - [x] Dark / Light / Follow System dynamic theme styling
+- [ ] In-app embedded Rust inference runtime (llama.cpp / candle) for 100% zero-dependency offline AI execution
 - [ ] Windows Services & Background Daemons manager
 - [ ] Automated scheduled system cleanups and health alerts
-- [ ] Cross-platform driver update & hardware vulnerability scan
 
 ---
 

@@ -188,6 +188,56 @@ pub fn get_app_version(app: tauri::AppHandle) -> String {
     app.package_info().version.to_string()
 }
 
+// -------------------------------------------------------------
+// GGUF Local Model Hub Commands
+// -------------------------------------------------------------
+
+#[tauri::command]
+pub async fn get_model_catalog(
+    state: tauri::State<'_, crate::model_manager::ModelManagerState>,
+) -> Result<Vec<crate::model_manager::ModelItem>, String> {
+    Ok(crate::model_manager::list_models(&state).await)
+}
+
+#[tauri::command]
+pub async fn download_local_model(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, crate::model_manager::ModelManagerState>,
+    model_id: String,
+) -> Result<String, String> {
+    crate::model_manager::download_model(app, &state, model_id).await
+}
+
+#[tauri::command]
+pub async fn cancel_model_download(
+    state: tauri::State<'_, crate::model_manager::ModelManagerState>,
+    model_id: String,
+) -> Result<String, String> {
+    crate::model_manager::cancel_download(&state, model_id).await
+}
+
+#[tauri::command]
+pub async fn delete_local_model(
+    state: tauri::State<'_, crate::model_manager::ModelManagerState>,
+    model_id: String,
+) -> Result<String, String> {
+    crate::model_manager::delete_model(&state, model_id).await
+}
+
+#[tauri::command]
+pub async fn set_active_local_model(
+    state: tauri::State<'_, crate::model_manager::ModelManagerState>,
+    model_id: String,
+) -> Result<String, String> {
+    crate::model_manager::set_active_model(&state, model_id).await
+}
+
+#[tauri::command]
+pub fn open_models_folder() -> Result<String, String> {
+    crate::model_manager::open_models_folder()
+}
+
+
 
 
 

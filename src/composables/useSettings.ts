@@ -19,6 +19,7 @@ const defaultSettings: UserSettings = {
 const providerDefaults: Record<UserSettings['aiProvider'], { endpoint: string; model: string }> = {
   deepseek: { endpoint: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
   ollama: { endpoint: 'http://127.0.0.1:11434/v1', model: 'qwen2.5:7b' },
+  openwaldo: { endpoint: 'http://127.0.0.1:11434/v1', model: 'openwaldo:latest' },
   qwen: { endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
   openai: { endpoint: 'https://api.openai.com/v1', model: 'gpt-4o' },
   claude: { endpoint: 'https://api.anthropic.com/v1', model: 'claude-3-5-sonnet-20241022' },

@@ -174,6 +174,11 @@ const providerConfigs = {
     badge: 'Claude 3.5',
     badgeClass: 'bg-purple-500/10 text-purple-300 border-purple-500/30',
   },
+  openwaldo: {
+    name: 'OpenWALDO',
+    badge: 'True Open AI',
+    badgeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40 shadow-sm shadow-emerald-500/20',
+  },
 };
 
 const activeProviderInfo = computed(() => {
