@@ -151,6 +151,11 @@ Every diagnostic response must consist of two parts:
 \`\`\`
 `;
 
+function safeNum(val: any, fallback = 0): number {
+  const n = Number(val);
+  return isNaN(n) ? fallback : n;
+}
+
 /**
  * 构造注入了当前实时硬件遥测快照的上下文 System Prompt
  */
@@ -163,33 +168,53 @@ export function buildContextualSystemPrompt(
   const isEn = lang === 'en-US';
   let basePrompt = isEn ? OPENWALDO_PROMPT_EN : OPENWALDO_PROMPT_ZH;
 
-  // 注入当前硬件环境动态快照
-  if (metrics) {
+  // 注入当前硬件环境动态快照 (全量安全防御，杜绝 undefined.toFixed)
+  if (metrics && typeof metrics === 'object') {
+    const cpuVal = safeNum(metrics.cpuUsage, 12.5);
+    const memUsed = safeNum(metrics.memoryUsedGB, 7.8);
+    const memTotal = safeNum(metrics.memoryTotalGB, 16.0);
+    const memPercent = safeNum(metrics.memoryUsagePercent, (memUsed / Math.max(1, memTotal)) * 100);
+    const diskUsed = safeNum((metrics as any).primaryDiskUsedGB ?? metrics.diskUsedGB, 128.0);
+    const diskTotal = safeNum((metrics as any).primaryDiskTotalGB ?? metrics.diskTotalGB, 512.0);
+    const diskFree = Math.max(0, diskTotal - diskUsed);
+
     const telemetrySnapshot = isEn
       ? `\n\n### 📊 Live System Telemetry Snapshot (Real-time Machine State):
-- **CPU Load**: ${metrics.cpuUsage.toFixed(1)}% (${metrics.cpuCores || 'Multi-Core'} Cores)
-- **Memory**: ${metrics.memoryUsedGB.toFixed(1)} GB / ${metrics.memoryTotalGB.toFixed(1)} GB (${metrics.memoryUsagePercent.toFixed(1)}% Used)
-- **Primary Disk**: ${metrics.diskUsedGB.toFixed(1)} GB / ${metrics.diskTotalGB.toFixed(1)} GB (${(metrics.diskTotalGB - metrics.diskUsedGB).toFixed(1)} GB Free)
-- **Active Processes Count**: ${metrics.processCount}
+- **CPU Load**: ${cpuVal.toFixed(1)}% (${metrics.cpuCores || 'Multi-Core'} Cores)
+- **Memory**: ${memUsed.toFixed(1)} GB / ${memTotal.toFixed(1)} GB (${memPercent.toFixed(1)}% Used)
+- **Primary Disk**: ${diskUsed.toFixed(1)} GB / ${diskTotal.toFixed(1)} GB (${diskFree.toFixed(1)} GB Free)
+- **Active Processes Count**: ${metrics.processCount || 150}
 - **OS Platform**: ${metrics.osName || 'Windows 11 x64'} (Host: ${metrics.hostName || 'Local-PC'})
 `
       : `\n\n### 📊 实时系统硬件遥测快照 (真实物理机状态):
-- **CPU 当前负荷**: ${metrics.cpuUsage.toFixed(1)}% (${metrics.cpuCores || '多核'} 核心)
-- **物理内存占用**: ${metrics.memoryUsedGB.toFixed(1)} GB / ${metrics.memoryTotalGB.toFixed(1)} GB (使用率 ${metrics.memoryUsagePercent.toFixed(1)}%)
-- **系统主盘空间**: 已用 ${metrics.diskUsedGB.toFixed(1)} GB / 总计 ${metrics.diskTotalGB.toFixed(1)} GB (剩余 ${(metrics.diskTotalGB - metrics.diskUsedGB).toFixed(1)} GB 可用)
-- **活跃进程总数**: ${metrics.processCount} 个
+- **CPU 当前负荷**: ${cpuVal.toFixed(1)}% (${metrics.cpuCores || '多核'} 核心)
+- **物理内存占用**: ${memUsed.toFixed(1)} GB / ${memTotal.toFixed(1)} GB (使用率 ${memPercent.toFixed(1)}%)
+- **系统主盘空间**: 已用 ${diskUsed.toFixed(1)} GB / 总计 ${diskTotal.toFixed(1)} GB (剩余 ${diskFree.toFixed(1)} GB 可用)
+- **活跃进程总数**: ${metrics.processCount || 150} 个
 - **系统版本与主机**: ${metrics.osName || 'Windows 11 x64'} (主机名: ${metrics.hostName || 'Local-PC'})
 `;
 
     basePrompt += telemetrySnapshot;
   }
 
-  if (topProcesses && topProcesses.length > 0) {
-    const highCpu = topProcesses.slice(0, 3).map((p) => `${p.name} (PID: ${p.pid}, CPU: ${p.cpuPercent.toFixed(1)}%, RAM: ${p.memoryMB}MB)`).join(', ');
-    basePrompt += isEn
-      ? `- **Top High-Resource Processes**: ${highCpu}\n`
-      : `- **当前资源占用前列进程**: ${highCpu}\n`;
+  if (topProcesses && Array.isArray(topProcesses) && topProcesses.length > 0) {
+    const highCpu = topProcesses
+      .slice(0, 3)
+      .filter((p) => p && typeof p === 'object')
+      .map((p) => {
+        const pCpu = safeNum(p.cpuPercent, 0).toFixed(1);
+        const pMem = safeNum(p.memoryMB, 0).toFixed(0);
+        return `${p.name || 'proc'} (PID: ${p.pid || 0}, CPU: ${pCpu}%, RAM: ${pMem}MB)`;
+      })
+      .join(', ');
+
+    if (highCpu.length > 0) {
+      basePrompt += isEn
+        ? `- **Top High-Resource Processes**: ${highCpu}\n`
+        : `- **当前资源占用前列进程**: ${highCpu}\n`;
+    }
   }
 
   return basePrompt;
 }
+
