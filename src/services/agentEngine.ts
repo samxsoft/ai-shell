@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ActionCardData, DiagnosticLog, UserSettings, AiDebugLog } from '@/types';
+import type { ActionCardData, DiagnosticLog, UserSettings, AiDebugLog, SystemMetrics, ProcessItem } from '@/types';
 import { sendChatCompletion, type ChatMessageParam } from './aiClient';
+import { buildContextualSystemPrompt } from '@/services/prompts/openwaldoPrompt';
 
 /**
  * 暴露给 LLM 的标准系统探针工具定义 (OpenAI Function Calling Schema)
@@ -285,7 +286,22 @@ export async function runAgentDiagnosis(
   const logs: DiagnosticLog[] = [];
   const debugLogs: AiDebugLog[] = [];
   const isEn = lang === 'en-US';
-  const systemPrompt = isEn ? AGENT_SYSTEM_PROMPT_EN : AGENT_SYSTEM_PROMPT_ZH;
+
+  // 1. 尝试抓取当前实时系统遥测快照（供 OpenWALDO 与小模型做环境感知）
+  let liveMetrics: SystemMetrics | null = null;
+  let topProcesses: ProcessItem[] = [];
+  try {
+    liveMetrics = await invoke<SystemMetrics>('get_system_metrics').catch(() => null);
+    topProcesses = await invoke<ProcessItem[]>('get_process_list', { limit: 5 }).catch(() => []);
+  } catch {}
+
+  // 2. 构造针对性增强的 System Prompt
+  let systemPrompt: string;
+  if (settings.aiProvider === 'openwaldo' || settings.aiProvider === 'local_embedded') {
+    systemPrompt = buildContextualSystemPrompt(settings.aiProvider, isEn ? 'en-US' : 'zh-CN', liveMetrics, topProcesses);
+  } else {
+    systemPrompt = isEn ? AGENT_SYSTEM_PROMPT_EN : AGENT_SYSTEM_PROMPT_ZH;
+  }
 
   const conversation: ChatMessageParam[] = [
     { role: 'system', content: systemPrompt },
@@ -500,34 +516,64 @@ function cleanInternalTags(rawText: string): string {
 }
 
 /**
- * 从 LLM 返回文本中提取结构化 Action Cards 与 Summary (具备彻底清洗与智能兜底)
+ * 容错式 JSON 清洗器：去除尾随逗号、单引号替换等
+ */
+function sanitizeJsonString(str: string): string {
+  return str
+    .replace(/,\s*([\}\]])/g, '$1') // 移除尾随逗号
+    .replace(/[\u201C\u201D]/g, '"') // 替换中文双引号
+    .replace(/[\u2018\u2019]/g, "'"); // 替换中文单引号
+}
 
+/**
+ * 从 LLM 返回文本中提取结构化 Action Cards 与 Summary (具备彻底清洗与智能兜底)
  */
 function extractActionCardsAndSummary(rawText: string, userQuery?: string, logs?: DiagnosticLog[]): { cleanContent: string; summary?: string; cards: ActionCardData[] } {
-  const cardRegex = /<<<ACTION_CARDS>>>([\s\S]*?)<<<END_ACTION_CARDS>>>/i;
-  const match = rawText.match(cardRegex);
-
   let cleanContent = rawText;
   let cards: ActionCardData[] = [];
 
-  if (match) {
-    cleanContent = rawText.replace(cardRegex, '').trim();
+  // 模式 1: 专用标签 <<<ACTION_CARDS>>>...<<<END_ACTION_CARDS>>>
+  const customTagRegex = /<<<ACTION_CARDS>>>([\s\S]*?)<<<END_ACTION_CARDS>>>/i;
+  const customMatch = rawText.match(customTagRegex);
+
+  // 模式 2: Markdown 代码块 ```json { "title": ... } ``` 或 ```json [ { "title": ... } ] ```
+  const markdownJsonRegex = /```(?:json)?\s*([\{\[][\s\S]*?"title"[\s\S]*?[\}\]])\s*```/i;
+  const mdMatch = rawText.match(markdownJsonRegex);
+
+  let rawJsonBlock: string | null = null;
+
+  if (customMatch) {
+    cleanContent = rawText.replace(customTagRegex, '').trim();
+    rawJsonBlock = customMatch[1].trim();
+  } else if (mdMatch) {
+    // 只有当 JSON 包含 ActionCard 核心字段时才提取并作为卡片
+    const candidate = mdMatch[1].trim();
+    if (candidate.includes('type') || candidate.includes('impactDescription') || candidate.includes('actionButtonText')) {
+      rawJsonBlock = candidate;
+    }
+  }
+
+  if (rawJsonBlock) {
     try {
-      const jsonStr = match[1].trim();
-      const parsed = JSON.parse(jsonStr);
-      cards = (Array.isArray(parsed) ? parsed : [parsed]).map((c: any, idx: number) => ({
-        id: c.id || `act-gen-${idx}-${Date.now()}`,
-        title: c.title || '推荐处置方案',
-        type: c.type || 'general',
-        severity: c.severity || 'info',
-        impactDescription: c.impactDescription || '',
-        expectedBenefit: c.expectedBenefit || '优化系统性能',
-        actionButtonText: c.actionButtonText || '立即执行',
-        status: 'pending',
-        details: c.details || {},
-      }));
+      const sanitized = sanitizeJsonString(rawJsonBlock);
+      const parsed = JSON.parse(sanitized);
+      const rawList = Array.isArray(parsed) ? parsed : [parsed];
+
+      cards = rawList
+        .filter((c: any) => c && typeof c === 'object' && (c.title || c.type))
+        .map((c: any, idx: number) => ({
+          id: c.id || `act-gen-${idx}-${Date.now()}`,
+          title: c.title || '推荐系统处置方案',
+          type: (c.type || 'general') as any,
+          severity: (c.severity || 'info') as any,
+          impactDescription: c.impactDescription || '对系统指定资源执行安全优化与配置调整',
+          expectedBenefit: c.expectedBenefit || '优化系统运行效率并释放占用资源',
+          actionButtonText: c.actionButtonText || '立即审批执行',
+          status: 'pending',
+          details: c.details || {},
+        }));
     } catch (e) {
-      console.warn('解析 Action Cards JSON 失败:', e);
+      console.warn('解析 Action Cards JSON 失败，尝试局部字段提取:', e);
     }
   }
 
