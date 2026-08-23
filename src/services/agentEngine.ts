@@ -287,13 +287,43 @@ export async function runAgentDiagnosis(
   const debugLogs: AiDebugLog[] = [];
   const isEn = lang === 'en-US';
 
-  // 1. 尝试抓取当前实时系统遥测快照（供 OpenWALDO 与小模型做环境感知）
+  // 1. 尝试抓取当前实时系统遥测快照，并主动记录探针执行日志
   let liveMetrics: SystemMetrics | null = null;
   let topProcesses: ProcessItem[] = [];
   try {
-    liveMetrics = await invoke<SystemMetrics>('get_system_metrics').catch(() => null);
-    topProcesses = await invoke<ProcessItem[]>('get_process_list', { limit: 5 }).catch(() => []);
-  } catch {}
+    const { result: mResult, log: mLog } = await executeProbeTool('get_system_metrics', {});
+    liveMetrics = mResult;
+    logs.push(mLog);
+
+    const { result: pResult, log: pLog } = await executeProbeTool('get_process_list', { limit: 5 });
+    topProcesses = pResult;
+    logs.push(pLog);
+
+    // 针对用户意图主动触发专属深度探针
+    const qLower = userQuery.toLowerCase();
+    if (qLower.includes('端口') || qLower.includes('port') || qLower.includes('8080') || qLower.includes('3000')) {
+      const portMatch = userQuery.match(/\b\d{2,5}\b/);
+      const targetPort = portMatch ? Number(portMatch[0]) : 8080;
+      const { log: portLog } = await executeProbeTool('check_port_occupancy', { port: targetPort });
+      logs.push(portLog);
+    } else if (qLower.includes('c盘') || qLower.includes('垃圾') || qLower.includes('clean') || qLower.includes('disk') || qLower.includes('体检') || qLower.includes('全面')) {
+      const { log: diskLog } = await executeProbeTool('scan_system_garbage', {});
+      logs.push(diskLog);
+    } else if (qLower.includes('网络') || qLower.includes('dns') || qLower.includes('网页') || qLower.includes('network')) {
+      const { log: netLog } = await executeProbeTool('diagnose_network_health', {});
+      logs.push(netLog);
+    } else if (qLower.includes('docker') || qLower.includes('容器') || qLower.includes('镜像')) {
+      const { log: dockLog } = await executeProbeTool('scan_docker_environment', {});
+      logs.push(dockLog);
+    } else if (qLower.includes('自启') || qLower.includes('开机') || qLower.includes('启动') || qLower.includes('autostart')) {
+      const { log: autoLog } = await executeProbeTool('get_autostart_entries', {});
+      logs.push(autoLog);
+    }
+
+    onDiagnosticsUpdate([...logs]);
+  } catch (e) {
+    console.warn('主动探针执行遇到轻微异常:', e);
+  }
 
   // 2. 构造针对性增强的 System Prompt
   let systemPrompt: string;
